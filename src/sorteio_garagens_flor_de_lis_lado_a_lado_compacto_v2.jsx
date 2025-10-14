@@ -1,6 +1,4 @@
 import React, { useMemo, useRef, useState } from "react";
-const DEBUG = true; // ligue/desligue logs
-const dbg = (...args) => { if (DEBUG) console.log("[DBG]", ...args); };
 
 /* ===== Aleatoriedade ===== */
 function mulberry32(seed) {
@@ -30,6 +28,15 @@ const NATURAL_PAIRS = [
   [3, 4],
   [5, 6],
 ];
+
+/* ===== Paleta: estados das vagas ===== */
+const COLORS = {
+  free: "#16a34a",      // verde (livre)
+  selected: "#60a5fa",  // azul claro (escolhida/ocupada)
+  reserved: "#facc15",  // amarelo (par reservado para dupla)
+  blocked: "#475569",   // cinza (bloqueada)
+  base: "#1f2937"       // default
+};
 
 /* ===== Modelo garagem ===== */
 function buildInitialGarage() {
@@ -67,6 +74,18 @@ function buildInitialGarage() {
   return { spots, pairs };
 }
 
+/* ===== Lista de apartamentos: 4 por andar, 7 andares (1..7) ===== */
+function buildInitialApartments() {
+  const list = [];
+  for (let andar = 1; andar <= 7; andar++) {
+    for (let col = 1; col <= 4; col++) {
+      const num = `${andar}0${col}`; // 101..104, 201..204, ..., 701..704
+      list.push({ id: num, dupla: false, sorteado: false, vagas: [], ativo: true });
+    }
+  }
+  return list;
+}
+
 /* ===== Componente principal ===== */
 export default function GarageLotteryApp() {
   /* Estado */
@@ -74,16 +93,7 @@ export default function GarageLotteryApp() {
   const rng = useRef(mulberry32(12345));
   const [compact, setCompact] = useState(true); // densidade de layout
   const [garage, setGarage] = useState(buildInitialGarage());
-  const [apartments, setApartments] = useState(() => {
-    const list = [];
-    for (let i = 101; i <= 112; i++)
-      list.push({ id: String(i), dupla: false, sorteado: false, vagas: [] });
-    for (let i = 201; i <= 212; i++)
-      list.push({ id: String(i), dupla: false, sorteado: false, vagas: [] });
-    for (let i = 301; i <= 312; i++)
-      list.push({ id: String(i), dupla: false, sorteado: false, vagas: [] });
-    return list;
-  });
+  const [apartments, setApartments] = useState(buildInitialApartments);
   const [doubleReservations, setDoubleReservations] = useState(null); // aptId -> parId
   const [preprocessed, setPreprocessed] = useState(false);
 
@@ -135,7 +145,7 @@ export default function GarageLotteryApp() {
   const runPreprocessIfNeeded = () => {
     if (preprocessed && doubleReservations) return;
     const state = structuredClone({ spots: garage.spots, pairs: garage.pairs });
-    const duplos = apartments.filter((a) => a.dupla).map((a) => a.id);
+    const duplos = apartments.filter((a) => a.dupla && a.ativo).map((a) => a.id);
     const freePairs = getFreePairs(state);
     if (duplos.length > freePairs.length) {
       alert(
@@ -169,8 +179,8 @@ export default function GarageLotteryApp() {
   /* Sorteio (1 por clique) */
   const drawOne = () => {
     runPreprocessIfNeeded();
-    const pend = apartments.filter((a) => !a.sorteado);
-    if (!pend.length) return alert("Todos os apartamentos foram sorteados.");
+    const pend = apartments.filter((a) => a.ativo && !a.sorteado);
+    if (!pend.length) return alert("Todos os apartamentos participantes foram sorteados.");
     const apt = pick(pend);
     if (apt.dupla) {
       const parId = doubleReservations?.[apt.id];
@@ -190,31 +200,8 @@ export default function GarageLotteryApp() {
         )
       );
     } else {
-      const free = garage.spots.filter(
-        (s) => !s.blocked && !s.occupiedBy && !garage.pairs[s.parId]?.reservedFor
-      );
-
-      // DEBUG: visão completa do funil de vagas
-      if (DEBUG) {
-        const total = garage.spots.length;
-        const blocked = garage.spots.filter(s => s.blocked).length;
-        const occupied = garage.spots.filter(s => s.occupiedBy).length;
-        const reserved = garage.spots.filter(s => garage.pairs[s.parId]?.reservedFor).length;
-        const candidates = free.length;
-
-        // distribuição por região (pós-filtro)
-        const perRegion = {};
-        for (const s of free) {
-          const key = `${s.floor}-${s.side}`;
-          perRegion[key] = (perRegion[key] || 0) + 1;
-        }
-
-        dbg("FUNIL DE VAGAS →",
-          { total, blocked, occupied, reserved, candidates, perRegion });
-      }
-
+      const free = garage.spots.filter((s) => !s.blocked && !s.occupiedBy && !garage.pairs[s.parId]?.reservedFor);
       const spot = chooseBalancedSpot(free, garage);
-
       if (!spot) return alert("Sem vaga disponível.");
       setGarage((prev) => ({
         ...prev,
@@ -235,9 +222,7 @@ export default function GarageLotteryApp() {
     setGarage(buildInitialGarage());
     setDoubleReservations(null);
     setPreprocessed(false);
-    setApartments((prev) =>
-      prev.map((a) => ({ ...a, sorteado: false, vagas: [] }))
-    );
+    setApartments(buildInitialApartments());
   };
 
   /* Handlers */
@@ -248,12 +233,51 @@ export default function GarageLotteryApp() {
     setDoubleReservations(null);
     setPreprocessed(false);
   };
+
+  const toggleParticipa = (id) => {
+    setApartments((prev) => {
+      const target = prev.find((a) => a.id === id);
+      const willBeActive = !(target?.ativo ?? true); // invertido
+      // se vamos desativar e o apto já estava sorteado, precisamos liberar as vagas
+      if (!willBeActive && target?.sorteado && target.vagas?.length) {
+        setGarage((gPrev) => ({
+          ...gPrev,
+          spots: gPrev.spots.map((s) =>
+            target.vagas.includes(s.id) ? { ...s, occupiedBy: null } : s
+          ),
+        }));
+      }
+      // reset de pré-processamento, pois muda o conjunto participante
+      setDoubleReservations(null);
+      setPreprocessed(false);
+      return prev.map((a) =>
+        a.id === id
+          ? { ...a, ativo: willBeActive, ...(willBeActive ? {} : { sorteado: false, vagas: [] }) }
+          : a
+      );
+    });
+  };
+
   const onSeed = (v) => {
     setSeed(v);
     resetRng(v);
   };
 
-  const pending = apartments.filter((a) => !a.sorteado).length;
+  const pending = apartments.filter((a) => a.ativo && !a.sorteado).length;
+
+  /* ===== Helpers de UI ===== */
+  const spotBgColor = (spot) => {
+    const pair = garage.pairs[spot.parId];
+    if (spot.blocked) return COLORS.blocked;
+    if (spot.occupiedBy) return COLORS.selected;
+    if (pair?.reservedFor) return COLORS.reserved;
+    return COLORS.free;
+  };
+  const spotTextColor = (spot) => {
+    const bg = spotBgColor(spot);
+    // contraste mínimo legível
+    return bg === COLORS.free || bg === COLORS.reserved ? "#0b1220" : "#ffffff";
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#0b0f14", color: "#eaeef2" }}>
@@ -268,17 +292,17 @@ export default function GarageLotteryApp() {
           --apt-card-pad: 8px;
           --apt-title: 13px;
           --apt-badge: 10px;
-          --left-col-min: 420px;
-          --left-col-max: 520px;
+          --left-col-min: 440px;
+          --left-col-max: 580px;
           --gap: 12px;
         }
         .compact {
-          --apt-col-min: 120px;
+          --apt-col-min: 130px;
           --apt-card-pad: 6px;
           --apt-title: 12px;
           --apt-badge: 9.5px;
-          --left-col-min: 470px;
-          --left-col-max: 560px;
+          --left-col-min: 500px;
+          --left-col-max: 640px;
           --gap: 10px;
         }
 
@@ -382,14 +406,15 @@ export default function GarageLotteryApp() {
                   <div
                     key={a.id}
                     style={{
-                      border: "1px solid #1e293b",
+                      border: a.ativo ? "1px solid #1e293b" : "1px solid #7f1d1d",
                       borderRadius: 12,
                       padding: "var(--apt-card-pad)",
-                      background: "#0b1220",
+                      background: a.ativo ? "#0b1220" : "#2a0b0b",
                       display: "flex",
                       flexDirection: "column",
                       gap: "calc(var(--gap) - 4px)",
                     }}
+                    title={a.ativo ? "" : "Não participa do sorteio"}
                   >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <span
@@ -400,24 +425,57 @@ export default function GarageLotteryApp() {
                       >
                         #{a.id}
                       </span>
-                      <label
-                        style={{
-                          fontSize: 12,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          cursor: "pointer",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={a.dupla}
-                          onChange={() => toggleDupla(a.id)}
-                        />
-                        <span>Dupla</span>
-                      </label>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <label
+                          style={{
+                            fontSize: 12,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            cursor: "pointer",
+                            opacity: a.ativo ? 1 : 0.7,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={a.dupla}
+                            onChange={() => toggleDupla(a.id)}
+                            disabled={!a.ativo}
+                          />
+                          <span>Dupla</span>
+                        </label>
+                        <label
+                          style={{
+                            fontSize: 12,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={a.ativo}
+                            onChange={() => toggleParticipa(a.id)}
+                          />
+                          <span>Participa</span>
+                        </label>
+                      </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "calc(var(--gap) - 4px)", flexWrap: "wrap" }}>
+                      {!a.ativo && (
+                        <span
+                          style={{
+                            fontSize: "var(--apt-badge)",
+                            padding: "1px 6px",
+                            borderRadius: 999,
+                            background: "#fecaca",
+                            color: "#7f1d1d",
+                          }}
+                        >
+                          Inativo
+                        </span>
+                      )}
                       <span
                         style={{
                           fontSize: "var(--apt-badge)",
@@ -425,6 +483,7 @@ export default function GarageLotteryApp() {
                           borderRadius: 999,
                           background: a.dupla ? "#fef3c7" : "#d1fae5",
                           color: a.dupla ? "#92400e" : "#065f46",
+                          opacity: a.ativo ? 1 : 0.7,
                         }}
                       >
                         {a.dupla ? "Dupla" : "Simples"}
@@ -484,35 +543,24 @@ export default function GarageLotteryApp() {
                           padding: 12,
                         }}
                       >
-                        <h3 style={{ fontWeight: 600, marginBottom: 2 }}>Lado {side}</h3>
+                        <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Lado {side}</h3>
                         <div
                           style={{
                             display: "grid",
                             gridTemplateColumns: "repeat(6, minmax(0,1fr))",
-                            gap: 2,
+                            gap: 8,
                           }}
                         >
                           {POSITIONS.map((pos) => {
                             const spot = garage.spots.find(
                               (s) => s.floor === floor && s.side === side && s.pos === pos
                             );
-                            const pair = garage.pairs[spot.parId];
-                            const bg = spot.occupiedBy
-                              ? "#059669"
-                              : pair?.reservedFor
-                                ? "#facc15"
-                                : spot.blocked
-                                  ? "#475569"
-                                  : "#1f2937";
-                            const color = spot.occupiedBy ? "#fff" : "#e2e8f0";
+                            const bg = spotBgColor(spot);
+                            const color = spotTextColor(spot);
                             return (
                               <div
                                 key={spot.id}
-                                title={`${spot.id}
-Par: ${spot.parId}${pair?.reservedFor ? `
-Reservado p/ apto ${pair.reservedFor}` : ""
-                                  }${spot.occupiedBy ? `
-Ocupado por apto ${spot.occupiedBy}` : ""}`}
+                                title={`${spot.id}`}
                                 style={{
                                   height: 56,
                                   width: 56,
