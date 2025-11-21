@@ -5,7 +5,7 @@ import {
   getExclusiveApartmentType,
   validateConfigExclusivity,
   loadConfigFromFile,
-  isVagaExtendida
+  isVagaEstendida
 } from "./config/sorteioConfig.js";/* ===== Aleatoriedade ===== */
 function mulberry32(seed) {
   let t = seed >>> 0;
@@ -51,7 +51,7 @@ const NATURAL_PAIRS = [
 /* ===== Paleta: estados das vagas ===== */
 const COLORS = {
   free: "#16a34a",      // verde (livre)
-  extended: "#f97316",  // laranja (vaga extendida)
+  extended: "#f97316",  // laranja (vaga estendida)
   selected: "#60a5fa",  // azul claro (escolhida/ocupada)
   // reserved: "#facc15",  // (não mostrar mais)
   blocked: "#475569",   // cinza (bloqueada)
@@ -169,13 +169,13 @@ export default function GarageLotteryApp() {
       const a = state.spots.find((s) => s.id === p.aId);
       const b = state.spots.find((s) => s.id === p.bId);
 
-      // Converte IDs das vagas para números sequenciais para verificar se são extendidas
+      // Converte IDs das vagas para números sequenciais para verificar se são estendidas
       const vagaNumA = positionToSequentialNumber(a.floor, a.side, a.pos);
       const vagaNumB = positionToSequentialNumber(b.floor, b.side, b.pos);
 
-      // ❌ EXCLUSÃO: Pares que contenham vagas extendidas (laranja) não podem ser usados para duplas
-      if (isVagaExtendida(vagaNumA) || isVagaExtendida(vagaNumB)) {
-        console.log(`🚫 Par ${p.id} (vagas ${vagaNumA}, ${vagaNumB}) excluído - contém vaga(s) extendida(s)`);
+      // ❌ EXCLUSÃO: Pares que contenham vagas estendidas (laranja) não podem ser usados para duplas
+      if (isVagaEstendida(vagaNumA) || isVagaEstendida(vagaNumB)) {
+        console.log(`🚫 Par ${p.id} (vagas ${vagaNumA}, ${vagaNumB}) excluído - contém vaga(s) estendida(s)`);
         continue;
       }
 
@@ -315,15 +315,15 @@ export default function GarageLotteryApp() {
         }
 
         // 🎯 PRIORIZAÇÃO: Apartamentos simples preferem vagas normais
-        // Só usam vagas extendidas se não houver vagas normais disponíveis
+        // Só usam vagas estendidas se não houver vagas normais disponíveis
         const normalFree = allFree.filter(s => {
           const vagaNum = positionToSequentialNumber(s.floor, s.side, s.pos);
-          return !isVagaExtendida(vagaNum);
+          return !isVagaEstendida(vagaNum);
         });
 
         const extendedFree = allFree.filter(s => {
           const vagaNum = positionToSequentialNumber(s.floor, s.side, s.pos);
-          return isVagaExtendida(vagaNum);
+          return isVagaEstendida(vagaNum);
         });
 
         let chosenSpot = null;
@@ -333,7 +333,7 @@ export default function GarageLotteryApp() {
           chosenSpot = chooseBalancedSpot(normalFree, prev);
           console.log(`✅ Apartamento ${apt.id} recebeu vaga normal ${positionToSequentialNumber(chosenSpot.floor, chosenSpot.side, chosenSpot.pos)}`);
         } else if (extendedFree.length > 0) {
-          // Só usa vaga extendida se não houver vagas normais
+          // Só usa vaga estendida se não houver vagas normais
           chosenSpot = chooseBalancedSpot(extendedFree, prev);
           const vagaNum = positionToSequentialNumber(chosenSpot.floor, chosenSpot.side, chosenSpot.pos);
           console.log(`🟠 Apartamento ${apt.id} recebeu vaga estendida ${vagaNum} (não havia vagas normais disponíveis)`);
@@ -567,7 +567,7 @@ export default function GarageLotteryApp() {
         }
         .type-dupla { background: #fef3c7; color: #92400e; }
         .type-simples { background: #dbeafe; color: #1e40af; }
-        .type-extendida { background: #f3e8ff; color: #6b21a8; }
+        .type-estendida { background: #f3e8ff; color: #6b21a8; }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -593,7 +593,7 @@ export default function GarageLotteryApp() {
         <p><strong>Total de vagas atribuídas:</strong> ${sortedApartments.reduce((sum, apt) => sum + apt.vagas.length, 0)}</p>
         <p><strong>Apartamentos duplos:</strong> ${sortedApartments.filter(a => getApartmentType(a.id) === 'dupla').length}</p>
         <p><strong>Apartamentos simples:</strong> ${sortedApartments.filter(a => getApartmentType(a.id) === 'simples').length}</p>
-        <p><strong>Apartamentos extendidos:</strong> ${sortedApartments.filter(a => getApartmentType(a.id) === 'extendida').length}</p>
+        <p><strong>Apartamentos extendidos:</strong> ${sortedApartments.filter(a => getApartmentType(a.id) === 'estendida').length}</p>
     </div>
 
     <table class="results-table">
@@ -674,7 +674,7 @@ export default function GarageLotteryApp() {
     const styles = {
       simples: { background: "#dbeafe", color: "#1e40af" },
       dupla: { background: "#fef3c7", color: "#92400e" },
-      extendida: { background: "#f3e8ff", color: "#6b21a8" }
+      estendida: { background: "#f3e8ff", color: "#6b21a8" }
     };
     return styles[type] || styles.simples;
   };
@@ -704,9 +704,9 @@ export default function GarageLotteryApp() {
     if (spot.blocked) return COLORS.blocked;
     if (spot.occupiedBy) return COLORS.selected;
 
-    // Verificar se é uma vaga extendida
+    // Verificar se é uma vaga estendida
     const vagaNumber = positionToSequentialNumber(spot.floor, spot.side, spot.pos);
-    if (isVagaExtendida(vagaNumber)) return COLORS.extended;
+    if (isVagaEstendida(vagaNumber)) return COLORS.extended;
 
     return COLORS.free; // sempre verde se livre (mesmo que pertencente a um par reservado)
   };
@@ -943,7 +943,7 @@ export default function GarageLotteryApp() {
                           const labels = {
                             simples: 'Simples',
                             dupla: 'Dupla',
-                            extendida: 'Extendida'
+                            estendida: 'Estendida'
                           };
                           return (
                             <span

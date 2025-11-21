@@ -17,7 +17,7 @@ export const VAGAS_CONFIG = {
     POSITIONS: [1, 2, 3, 4, 5, 6, 7],
 
     // Pares naturais para duplas (posições 1-2, 3-4, 5-6)
-    // Posição 7 fica como vaga individual/extendida
+    // Posição 7 fica como vaga individual/estendida
     NATURAL_PAIRS: [
         [1, 2],
         [3, 4],
@@ -36,11 +36,11 @@ export const VAGAS_CONFIG = {
 
     // APARTAMENTOS COM DIREITO A VAGAS EXTENDIDAS
     APARTAMENTOS_VAGAS_EXTENDIDAS: [
-        101, // Apartamento 101 pode concorrer a vagas extendidas
-        103, // Apartamento 103 pode concorrer a vagas extendidas
-        105, // Apartamento 105 pode concorrer a vagas extendidas
-        201, // Apartamento 201 pode concorrer a vagas extendidas
-        203, // Apartamento 203 pode concorrer a vagas extendidas
+        101, // Apartamento 101 pode concorrer a vagas estendidas
+        103, // Apartamento 103 pode concorrer a vagas estendidas
+        105, // Apartamento 105 pode concorrer a vagas estendidas
+        201, // Apartamento 201 pode concorrer a vagas estendidas
+        203, // Apartamento 203 pode concorrer a vagas estendidas
         // Adicione mais apartamentos conforme necessário
     ],
 
@@ -86,13 +86,13 @@ export function sequentialNumberToPosition(vagaNumber) {
     return { floor, side, position };
 }
 
-// Função para verificar se uma vaga é extendida
-export function isVagaExtendida(vagaNumber) {
+// Função para verificar se uma vaga é estendida
+export function isVagaEstendida(vagaNumber) {
     return VAGAS_CONFIG.VAGAS_EXTENDIDAS.includes(vagaNumber);
 }
 
-// Função para verificar se um apartamento pode concorrer a vagas extendidas
-export function apartmentoPodeVagaExtendida(apartmentNumber) {
+// Função para verificar se um apartamento pode concorrer a vagas estendidas
+export function apartmentoPodeVagaEstendida(apartmentNumber) {
     return VAGAS_CONFIG.APARTAMENTOS_VAGAS_EXTENDIDAS.includes(apartmentNumber);
 }
 

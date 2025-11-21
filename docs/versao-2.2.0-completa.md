@@ -15,7 +15,7 @@
 - ✅ `getFreePairs()` funcionando (resolvido problema de 0 pares)
 - ✅ Nomenclatura portuguesa padronizada
 - ✅ Sincronização automática de configurações
-- ✅ Separação clara entre vagas duplas e extendidas
+- ✅ Separação clara entre vagas duplas e estendidas
 
 ---
 
@@ -100,7 +100,7 @@ npm run dev:watch
 - Resultado: 18 pares naturais disponíveis ✅
 
 ### **Nomenclatura Portuguesa - PADRONIZADA**
-- `estendida` → `extendida` em todos os arquivos
+- `estendida` → `estendida` em todos os arquivos
 - `vagas_estendidas` consistente
 - Variáveis e funções atualizadas
 
@@ -116,7 +116,7 @@ npm run dev:watch
 ### **Funcionalidades Verificadas:**
 - ✅ Apartamentos carregando (28 apartamentos)
 - ✅ Vagas duplas funcionando (`getFreePairs` > 0)
-- ✅ Vagas extendidas configuradas como pares (7,8 21,22 35,36)
+- ✅ Vagas estendidas configuradas como pares (7,8 21,22 35,36)
 - ✅ Apartamentos extendidos reduzidos para teste (303,202,302,503)
 - ✅ Servidor rodando em http://localhost:5173-5175/
 - ✅ Auto-deploy script funcionando
@@ -126,7 +126,7 @@ npm run dev:watch
 
 ## 📋 **CONFIGURAÇÃO ATUAL**
 
-### **Vagas Extendidas:**
+### **Vagas Estendidas:**
 ```properties
 vagas_estendidas=7,8,21,22,35,36
 ```
@@ -136,7 +136,7 @@ vagas_estendidas=7,8,21,22,35,36
 apartamentos_vagas_duplas=101,102,103,104,203,301,304,402,404,501,502,604,701,702
 ```
 
-### **Apartamentos com Direito a Vagas Extendidas (Reduzido para teste):**
+### **Apartamentos com Direito a Vagas Estendidas (Reduzido para teste):**
 ```properties
 apartamentos_vagas_estendidas=303,202,302,503
 ```

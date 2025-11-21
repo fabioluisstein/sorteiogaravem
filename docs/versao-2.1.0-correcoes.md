@@ -61,7 +61,7 @@ for (let i = 1; i <= VAGAS_CONFIG.VAGAS_POR_LADO; i += 2) {
 
 ### **3. Padronização de Nomenclatura Portuguesa**
 **Correções aplicadas em todos os arquivos:**
-- `estendida` → `extendida` (forma correta em português)
+- `estendida` → `estendida` (forma correta em português)
 - `vagas_estendidas` → `vagas_estendidas` (consistência)
 - Todas as variáveis, funções e propriedades atualizadas
 
@@ -96,15 +96,15 @@ console.log('🎯 [drawOne] Apt ${apt.id} precisa de vaga dupla. Chamando getFre
 
 1. **`src/config/sorteioConfig.js`**
    - Adicionado `VAGAS_POR_LADO` ao `generateReactConfig()`
-   - Padronização: `vagasEstendidas` → `vagasExtendidas`
+   - Padronização: `vagasEstendidas` → `vagasEstendidas`
 
 2. **`src/SorteioGaragens.jsx`**  
    - Corrigida condição do loop: `i < VAGAS_POR_LADO` → `i <= VAGAS_POR_LADO`
-   - Padronização global: `estendida` → `extendida`
+   - Padronização global: `estendida` → `estendida`
    - Logs de debug adicionados
 
 3. **`public/sorteio.properties`**
-   - Padronização: `vagas_estendidas` → `vagas_extendidas`
+   - Padronização: `vagas_estendidas` → `vagas_estendidas`
    - Configuração atualizada para pares: `7,8,21,22,35,36`
 
 4. **`config/sorteio.properties`**
@@ -118,7 +118,7 @@ console.log('🎯 [drawOne] Apt ${apt.id} precisa de vaga dupla. Chamando getFre
 - ✅ Nomenclatura portuguesa padronizada
 - ✅ Apartamentos carregando corretamente  
 - ✅ Vagas duplas funcionando (`getFreePairs` > 0)
-- ✅ Vagas extendidas configuradas como pares
+- ✅ Vagas estendidas configuradas como pares
 - ✅ Separação clara entre tipos de vagas
 - ✅ Debug implementado para monitoramento
 

@@ -435,7 +435,7 @@ export default function GarageLotteryApp() {
     if (!pend.length) return alert("Todos os apartamentos participantes foram sorteados.");
 
     const apt = pick(pend);
-    console.log(`🎲 [drawOne] Apartamento sorteado: ${apt.id} (tipo: ${apt.dupla ? 'DUPLA' : (apt.extendida ? 'EXTENDIDA' : 'SIMPLES')})`);
+    console.log(`🎲 [drawOne] Apartamento sorteado: ${apt.id} (tipo: ${apt.dupla ? 'DUPLA' : (apt.estendida ? 'EXTENDIDA' : 'SIMPLES')})`);
 
     if (apt.dupla) {
       const parId = doubleReservations?.[apt.id];
@@ -482,15 +482,15 @@ export default function GarageLotteryApp() {
       });
     } else {
       // Apartamento simples ou extendido
-      console.log(`🔍 [drawOne] Apt ${apt.id} é ${apt.dupla ? 'DUPLA' : (apt.extendida ? 'EXTENDIDA' : 'SIMPLES')}`);
+      console.log(`🔍 [drawOne] Apt ${apt.id} é ${apt.dupla ? 'DUPLA' : (apt.estendida ? 'EXTENDIDA' : 'SIMPLES')}`);
       setGarage((prev) => {
         console.log(`🔍 [drawOne] Total de spots:`, prev.spots.length);
         console.log(`🔍 [drawOne] Spots livres:`, prev.spots.filter(s => !s.blocked && !s.occupiedBy).length);
 
         let chosenSpot = null;
 
-        // Se o apartamento tem direito a vaga extendida E tem reserva
-        if (apt.extendida && extendedReservations?.[apt.id]) {
+        // Se o apartamento tem direito a vaga estendida E tem reserva
+        if (apt.estendida && extendedReservations?.[apt.id]) {
           const reservedSpotId = extendedReservations[apt.id];
           const reservedSpot = prev.spots.find(s => s.id === reservedSpotId);
 
@@ -550,12 +550,12 @@ export default function GarageLotteryApp() {
             return !isVagaEstendida(vagaNum);
           });
 
-          console.log(`🔍 [drawOne] Apt ${apt.id} - Vagas extendidas livres:`, extendedFree.length);
-          console.log(`🔍 [drawOne] Apt ${apt.id} - IDs vagas extendidas:`, extendedFree.map(s => s.id));
+          console.log(`🔍 [drawOne] Apt ${apt.id} - Vagas estendidas livres:`, extendedFree.length);
+          console.log(`🔍 [drawOne] Apt ${apt.id} - IDs vagas estendidas:`, extendedFree.map(s => s.id));
           console.log(`🔍 [drawOne] Apt ${apt.id} - Vagas normais livres:`, normalFree.length);
           console.log(`🔍 [drawOne] Apt ${apt.id} - IDs vagas normais:`, normalFree.map(s => s.id));
 
-          if (apt.extendida) {
+          if (apt.estendida) {
             // Apartamento com direito a vaga estendida: prioriza vagas estendidas
             if (extendedFree.length > 0) {
               chosenSpot = chooseBalancedSpot(extendedFree, prev);
@@ -590,7 +590,7 @@ export default function GarageLotteryApp() {
 
         if (!chosenSpot) {
           console.log(`❌ [drawOne] Apt ${apt.id} - FALHA! chosenSpot é null/undefined`);
-          console.log(`❌ [drawOne] Apt ${apt.id} - Estado: dupla=${apt.dupla}, extendida=${apt.extendida}`);
+          console.log(`❌ [drawOne] Apt ${apt.id} - Estado: dupla=${apt.dupla}, estendida=${apt.estendida}`);
           console.log(`❌ [drawOne] Apt ${apt.id} - normalFree.length=${normalFree?.length || 'undefined'}, extendedFree.length=${extendedFree?.length || 'undefined'}`);
 
           // 🚨 CORREÇÃO: NÃO marcar apartamento como sorteado se não conseguiu vaga

@@ -35,12 +35,12 @@ npm run dev:watch  # Dev com auto-sync
 ### 🎯 **Problemas Resolvidos**
 - **CRITICAL**: `getFreePairs()` retornando 0 pares
 - **BUG**: Apartamentos não carregando
-- **CONFIG**: Vagas extendidas não funcionando
+- **CONFIG**: Vagas estendidas não funcionando
 
 ### 🔧 **Correções Técnicas**
 - `VAGAS_CONFIG.VAGAS_POR_LADO` exportado em `generateReactConfig()`
 - Loop de pares corrigido: `i <= VAGAS_POR_LADO` em vez de `i < VAGAS_POR_LADO`
-- Nomenclatura portuguesa padronizada: `estendida` → `extendida`
+- Nomenclatura portuguesa padronizada: `estendida` → `estendida`
 
 ### 📊 **Resultados**
 - `NATURAL_PAIRS`: `[[1,2], [3,4], [5,6]]` ✅
@@ -59,21 +59,21 @@ npm run dev:watch  # Dev com auto-sync
 
 ### 🎯 **Funcionalidades Principais**
 - Sistema de vagas duplas para apartamentos específicos
-- Sistema de vagas extendidas com prioridade
+- Sistema de vagas estendidas com prioridade
 - Separação clara entre tipos de vagas
 - Interface de sorteio completa
 
 ### 🏗️ **Arquitetura**
 - Configuração via arquivos `.properties`
 - Sistema de pares naturais para vagas duplas
-- Prioridade para vagas extendidas
+- Prioridade para vagas estendidas
 - Fallback para vagas normais
 
 ### 📊 **Configuração Inicial**
 - 42 vagas totais (G1: 1-14, G2: 15-28, G3: 29-42)
 - 14 apartamentos com direito a vaga dupla
-- 6 apartamentos com direito a vaga extendida
-- 6 vagas extendidas: 7,8,21,22,35,36
+- 6 apartamentos com direito a vaga estendida
+- 6 vagas estendidas: 7,8,21,22,35,36
 
 ---
 

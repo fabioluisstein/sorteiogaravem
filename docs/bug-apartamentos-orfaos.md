@@ -26,7 +26,7 @@
 1. **Race condition** na atualização do estado React
 2. **`chooseBalancedSpot`** retornando `null` sem detectar
 3. **Filtros de vaga** muito restritivos removendo todas as opções
-4. **Conflito de reservas** de pares/extendidas bloqueando vagas normais
+4. **Conflito de reservas** de pares/estendidas bloqueando vagas normais
 5. **Estado inconsistente** entre `apartments` e `garage.spots`
 
 ### **Evidências:**
