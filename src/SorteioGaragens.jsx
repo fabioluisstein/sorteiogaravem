@@ -1,6 +1,12 @@
-import React, { useMemo, useRef, useState } from "react";
-
-/* ===== Aleatoriedade ===== */
+import React, { useRef, useState, useEffect } from "react";
+import { 
+  apartamentoTemDireitoDupla, 
+  positionToSequentialNumber,
+  getExclusiveApartmentType,
+  validateConfigExclusivity,
+  loadConfigFromFile,
+  isVagaExtendida
+} from "./config/sorteioConfig.js";/* ===== Aleatoriedade ===== */
 function mulberry32(seed) {
   let t = seed >>> 0;
   return function () {
@@ -19,10 +25,23 @@ function seededShuffle(arr, rand) {
   return a;
 }
 
+/* ===== Converte ID da vaga para número sequencial ===== */
+function vagaIdToSequentialNumber(vagaId) {
+  // vagaId formato: "G1-A1", "G1-A2", etc.
+  const match = vagaId.match(/^(G\d+)-([A-F])(\d+)$/);
+  if (!match) return vagaId; // fallback se não conseguir converter
+
+  const floor = match[1];
+  const side = match[2];
+  const position = Number.parseInt(match[3]);
+
+  return positionToSequentialNumber(floor, side, position);
+}
+
 /* ===== Configuração ===== */
 const FLOORS = ["G1", "G2", "G3"];
 const SIDES_BY_FLOOR = { G1: ["A", "B"], G2: ["C", "D"], G3: ["E", "F"] };
-const POSITIONS = [1, 2, 3, 4, 5, 6];
+const POSITIONS = [1, 2, 3, 4, 5, 6, 7];
 const NATURAL_PAIRS = [
   [1, 2],
   [3, 4],
@@ -32,6 +51,7 @@ const NATURAL_PAIRS = [
 /* ===== Paleta: estados das vagas ===== */
 const COLORS = {
   free: "#16a34a",      // verde (livre)
+  extended: "#f97316",  // laranja (vaga extendida)
   selected: "#60a5fa",  // azul claro (escolhida/ocupada)
   // reserved: "#facc15",  // (não mostrar mais)
   blocked: "#475569",   // cinza (bloqueada)
@@ -60,7 +80,8 @@ function buildInitialGarage() {
         };
       }
       for (const pos of POSITIONS) {
-        const [p1, p2] = NATURAL_PAIRS.find(([a, b]) => a === pos || b === pos);
+        const naturalPair = NATURAL_PAIRS.find(([a, b]) => a === pos || b === pos);
+        const [p1, p2] = naturalPair || [pos, pos]; // fallback para posições sem par
         spots.push({
           id: `${floor}-${side}${pos}`,
           floor,
@@ -81,8 +102,15 @@ function buildInitialApartments() {
   const list = [];
   for (let andar = 1; andar <= 7; andar++) {
     for (let col = 1; col <= 4; col++) {
-      const num = `${andar}0${col}`; // 101..104, 201..204, ..., 701..704
-      list.push({ id: num, dupla: false, sorteado: false, vagas: [], ativo: true });
+      const num = parseInt(`${andar}0${col}`); // 101..104, 201..204, ..., 701..704
+      const temDireitoDupla = apartamentoTemDireitoDupla(num);
+      list.push({
+        id: num,
+        dupla: temDireitoDupla,
+        sorteado: false,
+        vagas: [],
+        ativo: true
+      });
     }
   }
   return list;
@@ -92,10 +120,37 @@ function buildInitialApartments() {
 export default function GarageLotteryApp() {
   /* Estado */
   const [seed, setSeed] = useState(12345);
+  const [configLoaded, setConfigLoaded] = useState(false);
   const rng = useRef(mulberry32(12345));
   const [compact, setCompact] = useState(true); // densidade de layout
   const [garage, setGarage] = useState(buildInitialGarage());
-  const [apartments, setApartments] = useState(buildInitialApartments);
+  const [apartments, setApartments] = useState([]);  // Inicia vazio, será preenchido após carregar config
+
+  /* Carregamento da configuração */
+  useEffect(() => {
+    const loadConfig = async () => {
+      console.log('🔄 Tentando carregar configuração do arquivo...');
+      const loaded = await loadConfigFromFile();
+      if (loaded) {
+        console.log('✅ Configuração carregada com sucesso!');
+      } else {
+        console.log('⚠️ Usando configuração padrão (hardcoded)');
+      }
+      
+      // Sempre inicializa os apartamentos após tentar carregar a config
+      console.log('🏢 Inicializando apartamentos...');
+      setApartments(buildInitialApartments());
+      setConfigLoaded(true);
+    };
+    
+    loadConfig();
+  }, []);
+
+  /* Validação da configuração */
+  const configValidation = validateConfigExclusivity();
+  if (!configValidation.isValid) {
+    console.warn('⚠️ Problemas na configuração detectados:', configValidation.errors);
+  }
   const [doubleReservations, setDoubleReservations] = useState(null); // aptId -> parId
   const [preprocessed, setPreprocessed] = useState(false);
   const [lastDraw, setLastDraw] = useState(null); // { aptId, vagas }
@@ -113,6 +168,17 @@ export default function GarageLotteryApp() {
       const p = state.pairs[id];
       const a = state.spots.find((s) => s.id === p.aId);
       const b = state.spots.find((s) => s.id === p.bId);
+      
+      // Converte IDs das vagas para números sequenciais para verificar se são extendidas
+      const vagaNumA = positionToSequentialNumber(a.floor, a.side, a.pos);
+      const vagaNumB = positionToSequentialNumber(b.floor, b.side, b.pos);
+      
+      // ❌ EXCLUSÃO: Pares que contenham vagas extendidas (laranja) não podem ser usados para duplas
+      if (isVagaExtendida(vagaNumA) || isVagaExtendida(vagaNumB)) {
+        console.log(`🚫 Par ${p.id} (vagas ${vagaNumA}, ${vagaNumB}) excluído - contém vaga(s) extendida(s)`);
+        continue;
+      }
+      
       if (!a.occupiedBy && !b.occupiedBy && !a.blocked && !b.blocked) free.push(p);
     }
     return free;
@@ -237,35 +303,57 @@ export default function GarageLotteryApp() {
     } else {
       setGarage((prev) => {
         // lista atual de vagas livres, sem reservas e não ocupadas
-        const free = prev.spots.filter(
+        const allFree = prev.spots.filter(
           (s) =>
             !s.blocked &&
             !s.occupiedBy &&
             !prev.pairs[s.parId]?.reservedFor
         );
-        if (!free.length) {
+        if (!allFree.length) {
           alert("Sem vaga disponível.");
           return prev;
         }
 
-        // sorteia entre as realmente livres
-        const spot = chooseBalancedSpot(free, prev);
-        if (!spot) {
+        // 🎯 PRIORIZAÇÃO: Apartamentos simples preferem vagas normais
+        // Só usam vagas extendidas se não houver vagas normais disponíveis
+        const normalFree = allFree.filter(s => {
+          const vagaNum = positionToSequentialNumber(s.floor, s.side, s.pos);
+          return !isVagaExtendida(vagaNum);
+        });
+        
+        const extendedFree = allFree.filter(s => {
+          const vagaNum = positionToSequentialNumber(s.floor, s.side, s.pos);
+          return isVagaExtendida(vagaNum);
+        });
+
+        let chosenSpot = null;
+        
+        // Primeiro tenta vagas normais
+        if (normalFree.length > 0) {
+          chosenSpot = chooseBalancedSpot(normalFree, prev);
+          console.log(`✅ Apartamento ${apt.id} recebeu vaga normal ${positionToSequentialNumber(chosenSpot.floor, chosenSpot.side, chosenSpot.pos)}`);
+        } else if (extendedFree.length > 0) {
+          // Só usa vaga extendida se não houver vagas normais
+          chosenSpot = chooseBalancedSpot(extendedFree, prev);
+          const vagaNum = positionToSequentialNumber(chosenSpot.floor, chosenSpot.side, chosenSpot.pos);
+          console.log(`🟠 Apartamento ${apt.id} recebeu vaga estendida ${vagaNum} (não havia vagas normais disponíveis)`);
+        }
+
+        if (!chosenSpot) {
           alert("Sem vaga disponível.");
           return prev;
         }
 
         const updatedSpots = prev.spots.map((s) =>
-          s.id === spot.id ? { ...s, occupiedBy: apt.id } : s
+          s.id === chosenSpot.id ? { ...s, occupiedBy: apt.id } : s
         );
 
         setApartments((prevApts) =>
           prevApts.map((a) =>
-            a.id === apt.id ? { ...a, sorteado: true, vagas: [spot.id] } : a
+            a.id === apt.id ? { ...a, sorteado: true, vagas: [chosenSpot.id] } : a
           )
         );
-        setLastDraw({ aptId: apt.id, vagas: [spot.id] });
-
+        setLastDraw({ aptId: apt.id, vagas: [chosenSpot.id] });
 
         return { ...prev, spots: updatedSpots };
       });
@@ -279,39 +367,328 @@ export default function GarageLotteryApp() {
     setDoubleReservations(null);
     setPreprocessed(false);
     setApartments(buildInitialApartments());
+    setLastDraw(null);
+  };
+
+  /* Função para revalidar e sincronizar estados */
+  const revalidateStates = () => {
+    console.log('🔄 Revalidando estados...');
+    
+    // Reconstroi completamente os estados
+    const newGarage = buildInitialGarage();
+    const newApartments = buildInitialApartments();
+    
+    // Aplica novamente todos os sorteios válidos baseado nos apartamentos atuais
+    const sortedApartments = apartments.filter(a => a.sorteado && a.vagas.length > 0);
+    
+    console.log('📋 Apartamentos sorteados encontrados:', sortedApartments.map(a => ({
+      apt: a.id,
+      vagas: a.vagas,
+      tipo: getApartmentType(a.id)
+    })));
+    
+    // Aplica cada sorteio novamente
+    sortedApartments.forEach(apartment => {
+      apartment.vagas.forEach(vagaId => {
+        const spotIndex = newGarage.spots.findIndex(s => s.id === vagaId);
+        if (spotIndex >= 0) {
+          newGarage.spots[spotIndex].occupiedBy = apartment.id;
+        }
+      });
+      
+      const aptIndex = newApartments.findIndex(a => a.id === apartment.id);
+      if (aptIndex >= 0) {
+        newApartments[aptIndex] = { ...apartment };
+      }
+    });
+    
+    // Atualiza os estados
+    setGarage(newGarage);
+    setApartments(newApartments);
+    
+    console.log('✅ Estados revalidados e sincronizados');
+  };
+
+  /* Função para debug da vaga 22 */
+  const debugVaga22 = () => {
+    console.log('🔍 DEBUG - Investigando vaga 22...');
+    
+    // Encontrar a vaga 22 no estado
+    const vaga22 = garage.spots.find(s => {
+      const vagaNumber = positionToSequentialNumber(s.floor, s.side, s.pos);
+      return vagaNumber === 22;
+    });
+    
+    console.log('📍 Vaga 22 encontrada:', vaga22);
+    
+    // Encontrar qual apartamento deveria ter a vaga 22
+    const apartamentoComVaga22 = apartments.find(a => 
+      a.vagas.some(vagaId => {
+        const [floor, sidePos] = vagaId.split('-');
+        const side = sidePos.charAt(0);
+        const pos = Number.parseInt(sidePos.slice(1));
+        const vagaNumber = positionToSequentialNumber(floor, side, pos);
+        return vagaNumber === 22;
+      })
+    );
+    
+    console.log('🏠 Apartamento que deveria ter vaga 22:', apartamentoComVaga22);
+    
+    // Verificar apartamento 502 especificamente
+    const apt502 = apartments.find(a => a.id === 502);
+    console.log('🏠 Apartamento 502:', apt502);
+    
+    // Verificar apartamento 302 especificamente  
+    const apt302 = apartments.find(a => a.id === 302);
+    console.log('🏠 Apartamento 302:', apt302);
+  };
+  const generatePrintList = () => {
+    // Revalidação automática antes de gerar o PDF para garantir consistência
+    console.log('🔄 Sincronizando estados antes da impressão...');
+    
+    const sortedApartments = apartments
+      .filter(a => a.sorteado && a.vagas.length > 0)
+      .sort((a, b) => a.id - b.id);
+
+    // Validação automática: verificar consistência entre apartamentos e visualização
+    let inconsistencyFound = false;
+    for (const apartment of sortedApartments) {
+      for (const vagaId of apartment.vagas) {
+        const spot = garage.spots.find(s => s.id === vagaId);
+        if (spot && spot.occupiedBy !== apartment.id) {
+          console.warn(`⚠️ Inconsistência detectada: Vaga ${vagaId} no apartamento ${apartment.id} mas visualização mostra ${spot.occupiedBy}`);
+          inconsistencyFound = true;
+        }
+      }
+    }
+
+    if (inconsistencyFound) {
+      console.log('🔧 Corrigindo inconsistências automaticamente...');
+      // Aplicar correção automática
+      setGarage((prevGarage) => {
+        const newGarage = { ...prevGarage };
+        newGarage.spots = newGarage.spots.map(spot => {
+          // Resetar ocupação
+          const newSpot = { ...spot, occupiedBy: null };
+          
+          // Reaplicar baseado nos apartamentos sorteados
+          const ownerApartment = sortedApartments.find(apt => 
+            apt.vagas.includes(spot.id)
+          );
+          
+          if (ownerApartment) {
+            newSpot.occupiedBy = ownerApartment.id;
+          }
+          
+          return newSpot;
+        });
+        return newGarage;
+      });
+      
+      console.log('✅ Estados sincronizados automaticamente');
+    }
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    });
+    const timeStr = now.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    let printContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resultado do Sorteio de Garagens - Flor de Lis</title>
+    <style>
+        @page { margin: 2cm; }
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.4; 
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .header .subtitle {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #666;
+        }
+        .date-info {
+            font-size: 14px;
+            color: #888;
+        }
+        .summary {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .summary h2 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .results-table th,
+        .results-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .results-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .results-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .apartment-type {
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .type-dupla { background: #fef3c7; color: #92400e; }
+        .type-simples { background: #dbeafe; color: #1e40af; }
+        .type-extendida { background: #f3e8ff; color: #6b21a8; }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>RESULTADO DO SORTEIO DE GARAGENS</h1>
+        <div class="subtitle">Edifício Flor de Lis</div>
+        <div class="date-info">
+            Sorteio realizado em: ${dateStr} às ${timeStr}
+        </div>
+    </div>
+
+    <div class="summary">
+        <h2>📊 Resumo do Sorteio</h2>
+        <p><strong>Total de apartamentos sorteados:</strong> ${sortedApartments.length}</p>
+        <p><strong>Total de vagas atribuídas:</strong> ${sortedApartments.reduce((sum, apt) => sum + apt.vagas.length, 0)}</p>
+        <p><strong>Apartamentos duplos:</strong> ${sortedApartments.filter(a => getApartmentType(a.id) === 'dupla').length}</p>
+        <p><strong>Apartamentos simples:</strong> ${sortedApartments.filter(a => getApartmentType(a.id) === 'simples').length}</p>
+        <p><strong>Apartamentos extendidos:</strong> ${sortedApartments.filter(a => getApartmentType(a.id) === 'extendida').length}</p>
+    </div>
+
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th>Apartamento</th>
+                <th>Tipo</th>
+                <th>Vaga(s) Sorteada(s)</th>
+                <th>Andar da Garagem</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    sortedApartments.forEach(apartment => {
+      const type = getApartmentType(apartment.id);
+      const typeClass = `type-${type}`;
+      
+      // Converter IDs das vagas para números sequenciais
+      const vagasSequenciais = apartment.vagas.map(vagaId => {
+        // vagaId está no formato "G1-A1", "G2-C5", etc.
+        const [floor, sidePos] = vagaId.split('-');
+        const side = sidePos.charAt(0); // A, B, C, D, E, F
+        const pos = parseInt(sidePos.slice(1)); // 1, 2, 3, etc.
+        return positionToSequentialNumber(floor, side, pos);
+      });
+      
+      const vagasStr = vagasSequenciais.join(', ');
+      
+      // Determinar andar da garagem baseado na primeira vaga
+      let andarGaragem = '';
+      if (vagasSequenciais.length > 0) {
+        const primeiraVaga = vagasSequenciais[0];
+        if (primeiraVaga <= 14) andarGaragem = 'G1';
+        else if (primeiraVaga <= 28) andarGaragem = 'G2';
+        else andarGaragem = 'G3';
+      }
+
+      printContent += `
+            <tr>
+                <td><strong>${apartment.id}</strong></td>
+                <td><span class="apartment-type ${typeClass}">${type.toUpperCase()}</span></td>
+                <td>${vagasStr}</td>
+                <td>${andarGaragem}</td>
+            </tr>`;
+    });
+
+    printContent += `
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Sistema de Sorteio de Garagens - Flor de Lis</p>
+        <p>Documento gerado automaticamente em ${dateStr} às ${timeStr}</p>
+    </div>
+</body>
+</html>`;
+
+    // Abrir em nova janela para impressão
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Aguardar carregamento e abrir diálogo de impressão
+    setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 500);
   };
 
   /* Handlers */
-  const toggleDupla = (id) => {
-    setApartments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, dupla: !a.dupla } : a))
-    );
-    setDoubleReservations(null);
-    setPreprocessed(false);
+  // Função para determinar o tipo do apartamento
+  const getApartmentType = (apartmentId) => {
+    return getExclusiveApartmentType(apartmentId);
   };
 
-  const toggleParticipa = (id) => {
-    setApartments((prev) => {
-      const target = prev.find((a) => a.id === id);
-      const willBeActive = !(target?.ativo ?? true); // invertido
-      // se vamos desativar e o apto já estava sorteado, precisamos liberar as vagas
-      if (!willBeActive && target?.sorteado && target.vagas?.length) {
-        setGarage((gPrev) => ({
-          ...gPrev,
-          spots: gPrev.spots.map((s) =>
-            target.vagas.includes(s.id) ? { ...s, occupiedBy: null } : s
-          ),
-        }));
-      }
-      // reset de pré-processamento, pois muda o conjunto participante
-      setDoubleReservations(null);
-      setPreprocessed(false);
-      return prev.map((a) =>
-        a.id === id
-          ? { ...a, ativo: willBeActive, ...(willBeActive ? {} : { sorteado: false, vagas: [] }) }
-          : a
-      );
-    });
+  // Função para obter a cor do badge baseado no tipo
+  const getBadgeStyle = (type) => {
+    const styles = {
+      simples: { background: "#dbeafe", color: "#1e40af" },
+      dupla: { background: "#fef3c7", color: "#92400e" },
+      extendida: { background: "#f3e8ff", color: "#6b21a8" }
+    };
+    return styles[type] || styles.simples;
+  };
+
+  const toggleSpotBlock = (spotId) => {
+    setGarage((prev) => ({
+      ...prev,
+      spots: prev.spots.map((s) =>
+        s.id === spotId ? { ...s, blocked: !s.blocked } : s
+      ),
+    }));
+    // Reset preprocessamento ao alterar bloqueios
+    setDoubleReservations(null);
+    setPreprocessed(false);
   };
 
   const onSeed = (v) => {
@@ -326,11 +703,17 @@ export default function GarageLotteryApp() {
   const spotBgColor = (spot) => {
     if (spot.blocked) return COLORS.blocked;
     if (spot.occupiedBy) return COLORS.selected;
+    
+    // Verificar se é uma vaga extendida
+    const vagaNumber = positionToSequentialNumber(spot.floor, spot.side, spot.pos);
+    if (isVagaExtendida(vagaNumber)) return COLORS.extended;
+    
     return COLORS.free; // sempre verde se livre (mesmo que pertencente a um par reservado)
   };
   const spotTextColor = (spot) => {
     const bg = spotBgColor(spot);
-    return bg === COLORS.free ? "#0b1220" : "#ffffff";
+    if (bg === COLORS.free || bg === COLORS.extended) return "#0b1220"; // texto escuro para fundos claros
+    return "#ffffff"; // texto branco para fundos escuros
   };
 
   return (
@@ -389,6 +772,38 @@ export default function GarageLotteryApp() {
       `}</style>
 
       <div className={`wrap ${compact ? "compact" : ""}`}>
+        {/* Validação da Configuração */}
+        {configLoaded && !configValidation.isValid && (
+          <div style={{
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 16,
+            color: "#b91c1c"
+          }}>
+            <strong>⚠️ Problemas na configuração:</strong>
+            <ul style={{ margin: 0, paddingLeft: 20 }}>
+              {configValidation.errors.map((error, idx) => (
+                <li key={`error-${idx}`}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {/* Status do carregamento da configuração */}
+        <div style={{
+          background: configLoaded ? "#f0fdf4" : "#fef3c7",
+          border: `1px solid ${configLoaded ? "#bbf7d0" : "#fcd34d"}`,
+          borderRadius: 8,
+          padding: 8,
+          marginBottom: 16,
+          fontSize: 14,
+          color: configLoaded ? "#15803d" : "#92400e"
+        }}>
+          {configLoaded ? "✅ Configuração carregada" : "🔄 Carregando configuração..."}
+        </div>
+
         <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 16 }}>
           Sorteio de Garagens — Flor de Lis
         </h1>
@@ -432,6 +847,19 @@ export default function GarageLotteryApp() {
           </button>
 
           <button
+            onClick={generatePrintList}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 8,
+              background: "#059669",
+              color: "#fff",
+              border: 0,
+            }}
+          >
+            📄 Imprimir Lista
+          </button>
+
+          <button
             onClick={() => setCompact((c) => !c)}
             style={{
               padding: "8px 12px",
@@ -472,7 +900,7 @@ export default function GarageLotteryApp() {
                     Último sorteado: Apto {lastDraw.aptId}
                   </div>
                   <div style={{ fontSize: 20, marginTop: 6 }}>
-                    Garagem: {lastDraw.vagas.join(", ")}
+                    Garagem: {lastDraw.vagas.map(vagaIdToSequentialNumber).join(", ")}
                   </div>
                 </div>
               )}
@@ -509,40 +937,28 @@ export default function GarageLotteryApp() {
                         #{a.id}
                       </span>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <label
-                          style={{
-                            fontSize: 12,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            cursor: "pointer",
-                            opacity: a.ativo ? 1 : 0.7,
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={a.dupla}
-                            onChange={() => toggleDupla(a.id)}
-                            disabled={!a.ativo}
-                          />
-                          <span>Dupla</span>
-                        </label>
-                        <label
-                          style={{
-                            fontSize: 12,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            cursor: "pointer",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={a.ativo}
-                            onChange={() => toggleParticipa(a.id)}
-                          />
-                          <span>Participa</span>
-                        </label>
+                        {(() => {
+                          const type = getApartmentType(a.id);
+                          const style = getBadgeStyle(type);
+                          const labels = {
+                            simples: 'Simples',
+                            dupla: 'Dupla',
+                            extendida: 'Extendida'
+                          };
+                          return (
+                            <span
+                              style={{
+                                fontSize: 12,
+                                padding: "2px 8px",
+                                borderRadius: 12,
+                                fontWeight: 500,
+                                ...style
+                              }}
+                            >
+                              {labels[type]}
+                            </span>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "calc(var(--gap) - 4px)", flexWrap: "wrap" }}>
@@ -586,7 +1002,7 @@ export default function GarageLotteryApp() {
                       )}
                       {a.vagas.length > 0 && (
                         <span style={{ fontSize: "var(--apt-badge)", color: "#94a3b8" }}>
-                          {a.vagas.join(", ")}
+                          {a.vagas.map(vagaIdToSequentialNumber).join(", ")}
                         </span>
                       )}
                     </div>
@@ -613,60 +1029,48 @@ export default function GarageLotteryApp() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-                      gap: 16,
+                      gridTemplateColumns: "repeat(14, 1fr)",
+                      gap: 8,
+                      maxWidth: "100%"
                     }}
                   >
-                    {SIDES_BY_FLOOR[floor].map((side) => (
-                      <div
-                        key={`${floor}-${side}`}
-                        style={{
-                          border: "1px solid #1e293b",
-                          borderRadius: 12,
-                          padding: 12,
-                        }}
-                      >
-                        <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Lado {side}</h3>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(6, minmax(0,1fr))",
-                            gap: 8,
-                          }}
-                        >
-                          {POSITIONS.map((pos) => {
-                            const spot = garage.spots.find(
-                              (s) => s.floor === floor && s.side === side && s.pos === pos
-                            );
-                            const bg = spotBgColor(spot);
-                            const color = spotTextColor(spot);
-                            return (
-                              <div
-                                key={spot.id}
-                                title={`${spot.id}`}
-                                style={{
-                                  height: 56,
-                                  width: 56,
-                                  borderRadius: 10,
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  border: "1px solid #0b1220",
-                                  background: bg,
-                                  color,
-                                }}
-                              >
-                                <span>{side + pos}</span>
-                                {spot.occupiedBy && (
-                                  <span style={{ fontSize: 12 }}>apto {spot.occupiedBy}</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                    {SIDES_BY_FLOOR[floor].flatMap((side) =>
+                      POSITIONS.map((pos) => {
+                        const spot = garage.spots.find(
+                          (s) => s.floor === floor && s.side === side && s.pos === pos
+                        );
+                        const bg = spotBgColor(spot);
+                        const color = spotTextColor(spot);
+                        const vagaNumber = positionToSequentialNumber(floor, side, pos);
+                        return (
+                          <div
+                            key={spot.id}
+                            title={`Vaga ${vagaNumber}${spot.occupiedBy ? ` - Apartamento ${spot.occupiedBy}` : ''}`}
+                            style={{
+                              height: 56,
+                              width: 56,
+                              borderRadius: 10,
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: "1px solid #0b1220",
+                              background: bg,
+                              color,
+                              cursor: "pointer",
+                              fontSize: 14,
+                              fontWeight: "bold"
+                            }}
+                            onClick={() => toggleSpotBlock(spot.id)}
+                          >
+                            <span>{vagaNumber}</span>
+                            {spot.occupiedBy && (
+                              <span style={{ fontSize: 10 }}>apt {spot.occupiedBy}</span>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </section>
               ))}
