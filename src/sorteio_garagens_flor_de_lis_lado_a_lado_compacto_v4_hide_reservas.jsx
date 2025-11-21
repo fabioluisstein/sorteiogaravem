@@ -38,6 +38,8 @@ const COLORS = {
   base: "#1f2937"       // default
 };
 
+
+
 /* ===== Modelo garagem ===== */
 function buildInitialGarage() {
   const spots = []; // {id,floor,side,pos,parId,blocked,occupiedBy}
@@ -96,6 +98,8 @@ export default function GarageLotteryApp() {
   const [apartments, setApartments] = useState(buildInitialApartments);
   const [doubleReservations, setDoubleReservations] = useState(null); // aptId -> parId
   const [preprocessed, setPreprocessed] = useState(false);
+  const [lastDraw, setLastDraw] = useState(null); // { aptId, vagas }
+
 
   /* Helpers */
   const log = (...a) => console.log("[Sorteio]", ...a);
@@ -182,86 +186,91 @@ export default function GarageLotteryApp() {
 
   /* Sorteio (1 por clique) */
   const drawOne = () => {
-  runPreprocessIfNeeded();
+    runPreprocessIfNeeded();
 
-  const pend = apartments.filter((a) => a.ativo && !a.sorteado);
-  if (!pend.length) return alert("Todos os apartamentos participantes foram sorteados.");
+    const pend = apartments.filter((a) => a.ativo && !a.sorteado);
+    if (!pend.length) return alert("Todos os apartamentos participantes foram sorteados.");
 
-  const apt = pick(pend);
+    const apt = pick(pend);
 
-  if (apt.dupla) {
-    const parId = doubleReservations?.[apt.id];
-    setGarage((prev) => {
-      // escolhe sempre com base no estado atual
-      let pair = parId ? prev.pairs[parId] : pick(getFreePairs(prev));
-      if (!pair) {
-        alert(`Sem par livre para ${apt.id}`);
-        return prev;
-      }
-
-      // revalida se as vagas estão realmente livres
-      const spotA = prev.spots.find((s) => s.id === pair.aId);
-      const spotB = prev.spots.find((s) => s.id === pair.bId);
-      if (spotA.occupiedBy || spotB.occupiedBy) {
-        // já ocupadas -> tenta outro par livre
-        const livres = getFreePairs(prev);
-        if (!livres.length) {
+    if (apt.dupla) {
+      const parId = doubleReservations?.[apt.id];
+      setGarage((prev) => {
+        // escolhe sempre com base no estado atual
+        let pair = parId ? prev.pairs[parId] : pick(getFreePairs(prev));
+        if (!pair) {
           alert(`Sem par livre para ${apt.id}`);
           return prev;
         }
-        pair = pick(livres);
-      }
 
-      const updatedSpots = prev.spots.map((s) =>
-        s.id === pair.aId || s.id === pair.bId ? { ...s, occupiedBy: apt.id } : s
-      );
-      const updatedPairs = { ...prev.pairs };
-      if (updatedPairs[pair.id]?.reservedFor === apt.id) updatedPairs[pair.id].reservedFor = null;
+        // revalida se as vagas estão realmente livres
+        const spotA = prev.spots.find((s) => s.id === pair.aId);
+        const spotB = prev.spots.find((s) => s.id === pair.bId);
+        if (spotA.occupiedBy || spotB.occupiedBy) {
+          // já ocupadas -> tenta outro par livre
+          const livres = getFreePairs(prev);
+          if (!livres.length) {
+            alert(`Sem par livre para ${apt.id}`);
+            return prev;
+          }
+          pair = pick(livres);
+        }
 
-      // atualiza também os apartamentos
-      setApartments((prevApts) =>
-        prevApts.map((a) =>
-          a.id === apt.id ? { ...a, sorteado: true, vagas: [pair.aId, pair.bId] } : a
-        )
-      );
+        const updatedSpots = prev.spots.map((s) =>
+          s.id === pair.aId || s.id === pair.bId ? { ...s, occupiedBy: apt.id } : s
+        );
+        const updatedPairs = { ...prev.pairs };
+        if (updatedPairs[pair.id]?.reservedFor === apt.id) updatedPairs[pair.id].reservedFor = null;
 
-      return { spots: updatedSpots, pairs: updatedPairs };
-    });
-  } else {
-    setGarage((prev) => {
-      // lista atual de vagas livres, sem reservas e não ocupadas
-      const free = prev.spots.filter(
-        (s) =>
-          !s.blocked &&
-          !s.occupiedBy &&
-          !prev.pairs[s.parId]?.reservedFor
-      );
-      if (!free.length) {
-        alert("Sem vaga disponível.");
-        return prev;
-      }
+        // atualiza também os apartamentos
+        setApartments((prevApts) =>
+          prevApts.map((a) =>
+            a.id === apt.id ? { ...a, sorteado: true, vagas: [pair.aId, pair.bId] } : a
+          )
+        );
+        setLastDraw({ aptId: apt.id, vagas: [pair.aId, pair.bId] });
 
-      // sorteia entre as realmente livres
-      const spot = chooseBalancedSpot(free, prev);
-      if (!spot) {
-        alert("Sem vaga disponível.");
-        return prev;
-      }
 
-      const updatedSpots = prev.spots.map((s) =>
-        s.id === spot.id ? { ...s, occupiedBy: apt.id } : s
-      );
 
-      setApartments((prevApts) =>
-        prevApts.map((a) =>
-          a.id === apt.id ? { ...a, sorteado: true, vagas: [spot.id] } : a
-        )
-      );
+        return { spots: updatedSpots, pairs: updatedPairs };
+      });
+    } else {
+      setGarage((prev) => {
+        // lista atual de vagas livres, sem reservas e não ocupadas
+        const free = prev.spots.filter(
+          (s) =>
+            !s.blocked &&
+            !s.occupiedBy &&
+            !prev.pairs[s.parId]?.reservedFor
+        );
+        if (!free.length) {
+          alert("Sem vaga disponível.");
+          return prev;
+        }
 
-      return { ...prev, spots: updatedSpots };
-    });
-  }
-};
+        // sorteia entre as realmente livres
+        const spot = chooseBalancedSpot(free, prev);
+        if (!spot) {
+          alert("Sem vaga disponível.");
+          return prev;
+        }
+
+        const updatedSpots = prev.spots.map((s) =>
+          s.id === spot.id ? { ...s, occupiedBy: apt.id } : s
+        );
+
+        setApartments((prevApts) =>
+          prevApts.map((a) =>
+            a.id === apt.id ? { ...a, sorteado: true, vagas: [spot.id] } : a
+          )
+        );
+        setLastDraw({ aptId: apt.id, vagas: [spot.id] });
+
+
+        return { ...prev, spots: updatedSpots };
+      });
+    }
+  };
 
 
   /* Reset */
@@ -363,7 +372,15 @@ export default function GarageLotteryApp() {
           gap: 24px;
           align-items: start;
         }
-        .leftSticky { position:sticky; top:16px; align-self:start; max-height:calc(100vh - 32px); overflow:auto; }
+        .leftSticky {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;       /* ✅ só rolagem vertical */
+  overflow-x: hidden;     /* ✅ impede scroll lateral */
+}
+
 
         @media (max-width: 1200px) {
           .twoCols { grid-template-columns: 1fr; }
@@ -440,6 +457,26 @@ export default function GarageLotteryApp() {
                 padding: 16,
               }}
             >
+              {lastDraw && (
+                <div
+                  style={{
+                    background: "#1e3a8a",
+                    borderRadius: 12,
+                    padding: "20px 16px",
+                    marginBottom: 16,
+                    textAlign: "center",
+                    color: "white",
+                  }}
+                >
+                  <div style={{ fontSize: 28, fontWeight: 800 }}>
+                    Último sorteado: Apto {lastDraw.aptId}
+                  </div>
+                  <div style={{ fontSize: 20, marginTop: 6 }}>
+                    Garagem: {lastDraw.vagas.join(", ")}
+                  </div>
+                </div>
+              )}
+
               <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Apartamentos</h2>
               <div
                 style={{
