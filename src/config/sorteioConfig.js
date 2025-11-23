@@ -12,7 +12,7 @@ export class ConfigReader {
       vagas_g3: [29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
       vagas_estendidas: [7, 8, 21, 22, 35, 36],
       apartamentos_vagas_duplas: [101, 102, 103, 104, 203, 301, 304, 402, 404, 501, 502, 604, 701, 702],
-      apartamentos_vagas_estendidas: [],
+      apartamentos_vagas_estendidas: [303, 403, 503, 603, 703],
       total_vagas: 42,
       vagas_por_andar: 14,
       vagas_por_lado: 7,
@@ -234,6 +234,7 @@ export const loadConfigFromFile = async () => {
       // Debug: verificar valores carregados
       console.log('🔧 Apartamentos duplos carregados:', sorteioConfig.apartamentosVagasDuplas);
       console.log('🔧 Apartamentos extendidos carregados:', sorteioConfig.apartamentosVagasEstendidas);
+      console.log('🔧 ⭐ VAGAS ESTENDIDAS carregadas:', sorteioConfig.vagasEstendidas);
 
       console.log('✅ Configuração carregada do arquivo sorteio.properties');
       return true;
