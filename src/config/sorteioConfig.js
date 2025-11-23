@@ -44,6 +44,10 @@ export class ConfigReader {
     }
 
     this.config = config;
+    
+    // 🔄 CONVERSÃO AUTOMÁTICA: Vagas estendidas excedentes → vagas simples
+    this.convertExcessExtendedToSimple();
+    
     return config;
   }
 
@@ -215,6 +219,34 @@ export class ConfigReader {
     }
 
     return 'simples';
+  }
+
+  // 🔄 CONVERSÃO: Vagas estendidas excedentes → vagas simples
+  convertExcessExtendedToSimple() {
+    const vagasEstendidas = [...(this.config.vagas_estendidas || [])];
+    const apartamentosExtendidos = [...(this.config.apartamentos_vagas_estendidas || [])];
+    
+    // Calcular excedentes
+    const excedentes = vagasEstendidas.length - apartamentosExtendidos.length;
+    
+    if (excedentes > 0) {
+      console.log(`🔄 DETECTADO: ${excedentes} vaga(s) estendida(s) excedente(s)`);
+      console.log(`   - Apartamentos estendidos: ${apartamentosExtendidos.length}`);
+      console.log(`   - Vagas estendidas: ${vagasEstendidas.length}`);
+      
+      // Remover excedente do final da lista de estendidas
+      const convertidas = vagasEstendidas.slice(-excedentes);
+      const vagasEstendidasReduzidas = vagasEstendidas.filter(v => !convertidas.includes(v));
+      
+      // Atualizar configuração
+      this.config.vagas_estendidas = vagasEstendidasReduzidas;
+      
+      console.log(`🔄 Convertendo vagas estendidas excedentes para simples: ${convertidas.join(', ')}`);
+      console.log(`   - Vagas estendidas restantes: ${vagasEstendidasReduzidas.join(', ')}`);
+      console.log(`   ✅ Conversão realizada: ${apartamentosExtendidos.length} apartamentos para ${vagasEstendidasReduzidas.length} vagas estendidas`);
+    } else {
+      console.log(`✅ Vagas estendidas balanceadas: ${vagasEstendidas.length} vagas para ${apartamentosExtendidos.length} apartamentos`);
+    }
   }
 }
 

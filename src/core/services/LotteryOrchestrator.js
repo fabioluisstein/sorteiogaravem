@@ -210,12 +210,22 @@ export class LotteryOrchestrator extends ILotteryOrchestrator {
             drawCount++;
         }
 
+        // 🎉 VERIFICAR SE TODOS OS APARTAMENTOS FORAM SORTEADOS
+        const apartmentosDisponiveis = apartments.filter(apt => apt.isAvailableForDraw());
+        const todosApartamentosSorteados = apartmentosDisponiveis.length === 0;
+        
+        if (todosApartamentosSorteados && results.filter(r => r.success).length > 0) {
+            console.log('🎉 Sorteio foi finalizado com sucesso.');
+            console.log('✅ Todos os apartamentos foram sorteados');
+        }
+
         return {
             totalDraws: drawCount,
             successfulDraws: results.filter(r => r.success).length,
             failedDraws: results.filter(r => !r.success).length,
             results: results,
-            finalGarage: currentGarage
+            finalGarage: currentGarage,
+            allApartmentsSorted: todosApartamentosSorteados // 🎯 Nova propriedade
         };
     }
 
