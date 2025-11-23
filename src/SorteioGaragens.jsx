@@ -5,7 +5,9 @@ import {
   getExclusiveApartmentType,
   validateConfigExclusivity,
   loadConfigFromFile,
-  isVagaEstendida
+  isVagaEstendida,
+  getVagasProibidasDuplo, // 🎯 NOVO
+  sorteioConfig
 } from "./config/sorteioConfig.js";
 
 // Importar o novo sistema SOLID
@@ -115,9 +117,14 @@ function buildInitialApartments() {
     for (let col = 1; col <= 4; col++) {
       const num = parseInt(`${andar}0${col}`); // 101..104, 201..204, ..., 701..704
       const temDireitoDupla = apartamentoTemDireitoDupla(num);
+
+      // ✅ VERIFICAR SE É APARTAMENTO ESTENDIDO
+      const isExtendido = sorteioConfig.apartamentosVagasEstendidas.includes(num);
+
       list.push({
         id: num,
         dupla: temDireitoDupla,
+        estendido: isExtendido, // ✅ Adicionar propriedade estendido
         sorteado: false,
         vagas: [],
         ativo: true
@@ -219,7 +226,8 @@ export default function GarageLotteryApp() {
     if (configLoaded) {
       lotterySystem.current = LotterySystemFactory.createSystem({
         seed: seed,
-        isExtendedSpotFn: isVagaEstendida
+        isExtendedSpotFn: isVagaEstendida,
+        isExtendedApartmentFn: (apartmentId) => sorteioConfig.apartamentosVagasEstendidas.includes(apartmentId)
       });
     }
   }, [configLoaded, seed]);
@@ -286,6 +294,7 @@ export default function GarageLotteryApp() {
         apartmentNumber: apt.id.toString(),
         ativo: apt.ativo,
         dupla: apt.dupla,
+        estendido: apt.estendido, // ✅ Incluir propriedade estendido
         sorteado: apt.sorteado,
         vagas: apt.vagas || []
       }));
@@ -301,16 +310,20 @@ export default function GarageLotteryApp() {
 
       // ========== PRÉ-RESERVA PARA APARTAMENTOS DUPLOS ==========
       // Verificar se ainda existem apartamentos duplos não sorteados
-      const undrawnDoubleApartments = solidApartments.filter(apt => 
+      const undrawnDoubleApartments = solidApartments.filter(apt =>
         apt.dupla && apt.isAvailableForDraw()
       );
-      
+
       // Se há apartamentos duplos não sorteados e não há pré-reservas ativas, fazer pré-reserva
       const hasActiveReservations = Object.keys(solidGarage.doublePairReservations).length > 0;
-      
+
       if (undrawnDoubleApartments.length > 0 && !hasActiveReservations) {
         console.log(`📋 Pré-reservando vagas para ${undrawnDoubleApartments.length} apartamentos duplos restantes`);
-        const preReserveSuccess = solidGarage.preReserveDoublePairs(undrawnDoubleApartments.length);
+
+        // 🎯 NOVO: Obter vagas proibidas para duplos
+        const vagasProibidasDuplo = getVagasProibidasDuplo();
+        const preReserveSuccess = solidGarage.preReserveDoublePairs(undrawnDoubleApartments.length, vagasProibidasDuplo);
+
         if (!preReserveSuccess) {
           setError(`Não há pares suficientes para ${undrawnDoubleApartments.length} apartamentos duplos restantes`);
           setIsProcessing(false);
@@ -379,7 +392,8 @@ export default function GarageLotteryApp() {
     if (lotterySystem.current) {
       lotterySystem.current = LotterySystemFactory.createSystem({
         seed: seed,
-        isExtendedSpotFn: isVagaEstendida
+        isExtendedSpotFn: isVagaEstendida,
+        isExtendedApartmentFn: (apartmentId) => sorteioConfig.apartamentosVagasEstendidas.includes(apartmentId)
       });
     }
   };
@@ -629,7 +643,8 @@ export default function GarageLotteryApp() {
     if (lotterySystem.current) {
       lotterySystem.current = LotterySystemFactory.createSystem({
         seed: seed,
-        isExtendedSpotFn: isVagaEstendida
+        isExtendedSpotFn: isVagaEstendida,
+        isExtendedApartmentFn: (apartmentId) => sorteioConfig.apartamentosVagasEstendidas.includes(apartmentId)
       });
     }
   };

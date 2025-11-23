@@ -39,12 +39,12 @@ export class IApartmentTypeDetector {
  */
 export class ISpotSelector {
     /**
-     * Seleciona uma vaga baseada no tipo do apartamento
-     * @param {string} apartmentType - Tipo do apartamento
+     * Seleciona uma vaga para o apartamento especificado
+     * @param {Apartment} apartment - Apartamento que será sorteado
      * @param {Garage} garage - Estado atual da garagem
      * @returns {Object|null} - Vaga selecionada ou null se nenhuma disponível
      */
-    selectSpot(apartmentType, garage) {
+    selectSpot(apartment, garage) {
         throw new Error('Method selectSpot must be implemented');
     }
 }

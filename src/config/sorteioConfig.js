@@ -11,6 +11,7 @@ export class ConfigReader {
       vagas_g2: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28],
       vagas_g3: [29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42],
       vagas_estendidas: [7, 8, 21, 22, 35, 36],
+      vagas_proibidas_duplo: [7, 8, 21, 22, 35, 36], // 🎯 NOVO: Vagas proibidas para pares duplos
       apartamentos_vagas_duplas: [101, 102, 103, 104, 203, 301, 304, 402, 404, 501, 502, 604, 701, 702],
       apartamentos_vagas_estendidas: [303, 403, 503, 603, 703],
       total_vagas: 42,
@@ -79,6 +80,7 @@ export class ConfigReader {
   get todasVagas() { return [...this.vagasG1, ...this.vagasG2, ...this.vagasG3]; }
 
   get vagasEstendidas() { return this.config.vagas_estendidas; }
+  get vagasProibidasDuplo() { return this.config.vagas_proibidas_duplo; } // 🎯 NOVO
   get apartamentosVagasDuplas() { return this.config.apartamentos_vagas_duplas; }
   get apartamentosVagasEstendidas() { return this.config.apartamentos_vagas_estendidas; }
 
@@ -218,6 +220,22 @@ export class ConfigReader {
 
 // Instância global da configuração
 export const sorteioConfig = new ConfigReader();
+
+// 🎯 NOVO: Função para obter lista completa de vagas proibidas para duplos
+export const getVagasProibidasDuplo = () => {
+  const vagasProibidasBase = [...(sorteioConfig.vagasProibidasDuplo || [])];
+  const vagasEstendidas = [...(sorteioConfig.vagasEstendidas || [])];
+
+  // Somar vagas estendidas às proibidas (evitar duplicatas)
+  const vagasProibidasCompleta = [...new Set([...vagasProibidasBase, ...vagasEstendidas])];
+
+  console.log(`🚫 Vagas proibidas para pares duplos: ${vagasProibidasCompleta.join(', ')}`);
+  console.log(`   - Base (configuradas): ${vagasProibidasBase.join(', ')}`);
+  console.log(`   - Estendidas (somadas): ${vagasEstendidas.join(', ')}`);
+  console.log(`   - Config debug: vagasProibidasDuplo=${JSON.stringify(sorteioConfig.vagasProibidasDuplo)}, vagasEstendidas=${JSON.stringify(sorteioConfig.vagasEstendidas)}`);
+
+  return vagasProibidasCompleta;
+};
 
 // Função para carregar configuração do arquivo .properties
 export const loadConfigFromFile = async () => {

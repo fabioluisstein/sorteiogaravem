@@ -28,31 +28,36 @@ export class SpotSelectionService extends ISpotSelector {
     /**
      * @param {IRandomnessService} randomnessService - Serviço de aleatorização
      * @param {Function} isExtendedSpotFn - Função para verificar se vaga é estendida
+     * @param {IApartmentTypeDetector} typeDetector - Detector de tipos de apartamento
      */
-    constructor(randomnessService, isExtendedSpotFn) {
+    constructor(randomnessService, isExtendedSpotFn, typeDetector) {
         super();
         this.randomnessService = randomnessService;
         this.isExtendedSpotFn = isExtendedSpotFn;
+        this.typeDetector = typeDetector;
 
         // Inicializar estratégias
         this.strategies = {
-            [ApartmentType.SIMPLES]: new SimpleSpotSelectionStrategy(randomnessService, isExtendedSpotFn),
-            [ApartmentType.DUPLO]: new DoubleSpotSelectionStrategy(randomnessService, isExtendedSpotFn),
-            [ApartmentType.ESTENDIDO]: new ExtendedSpotSelectionStrategy(randomnessService, isExtendedSpotFn)
+            [ApartmentType.SIMPLES]: new SimpleSpotSelectionStrategy(randomnessService, isExtendedSpotFn, typeDetector.isExtendedApartmentFn),
+            [ApartmentType.DUPLO]: new DoubleSpotSelectionStrategy(randomnessService, isExtendedSpotFn, typeDetector.isExtendedApartmentFn),
+            [ApartmentType.ESTENDIDO]: new ExtendedSpotSelectionStrategy(randomnessService, isExtendedSpotFn, typeDetector.isExtendedApartmentFn)
         };
     }
 
     /**
-     * Seleciona uma vaga baseada no tipo do apartamento
-     * @param {string} apartmentType - Tipo do apartamento (simples, duplo, estendido)
+     * Seleciona uma vaga baseada no apartamento específico
+     * @param {Apartment} apartment - Apartamento que será sorteado
      * @param {Garage} garage - Estado atual da garagem
      * @returns {Object|null} - Dados da vaga/par selecionado ou null
      */
-    selectSpot(apartmentType, garage) {
+    selectSpot(apartment, garage) {
         // Validação de entrada
-        if (!apartmentType || !garage) {
-            throw new Error('Tipo de apartamento e garagem são obrigatórios');
+        if (!apartment || !garage) {
+            throw new Error('Apartamento e garagem são obrigatórios');
         }
+
+        // Determinar tipo do apartamento
+        const apartmentType = this.typeDetector.determineType(apartment);
 
         // Verificar se tipo é válido
         if (!Object.values(ApartmentType).includes(apartmentType)) {
@@ -65,11 +70,11 @@ export class SpotSelectionService extends ISpotSelector {
             throw new Error(`Estratégia não encontrada para tipo: ${apartmentType}`);
         }
 
-        // Executar estratégia
+        // Executar estratégia passando o apartamento
         try {
-            return strategy.execute(garage);
+            return strategy.execute(garage, apartment);
         } catch (error) {
-            console.error(`Erro ao executar estratégia para ${apartmentType}:`, error.message);
+            console.error(`Erro ao executar estratégia para apartamento ${apartment.id} (${apartmentType}):`, error.message);
             return null;
         }
     }

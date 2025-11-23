@@ -102,6 +102,7 @@ export class Apartment {
         const clone = new Apartment(this.id, this.apartmentNumber, this.ativo, this.dupla);
         clone.sorteado = this.sorteado;
         clone.vagas = [...this.vagas];
+        clone.estendido = this.estendido || false; // ✅ Incluir propriedade estendido
         return clone;
     }
 
@@ -115,6 +116,7 @@ export class Apartment {
             apartmentNumber: this.apartmentNumber,
             ativo: this.ativo,
             dupla: this.dupla,
+            estendido: this.estendido || false, // ✅ Incluir propriedade estendido
             sorteado: this.sorteado,
             vagas: [...this.vagas]
         };
@@ -129,6 +131,7 @@ export class Apartment {
         const apartment = new Apartment(data.id, data.apartmentNumber, data.ativo, data.dupla);
         apartment.sorteado = data.sorteado || false;
         apartment.vagas = data.vagas || [];
+        apartment.estendido = data.estendido || false; // ✅ Adicionar propriedade estendido
         return apartment;
     }
 }

@@ -4,6 +4,7 @@
  */
 
 import { ILotteryOrchestrator } from '../interfaces/IServices.js';
+import { getVagasProibidasDuplo } from '../../config/sorteioConfig.js'; // 🎯 NOVO
 
 /**
  * Orquestrador do sorteio de garagem
@@ -61,7 +62,7 @@ export class LotteryOrchestrator extends ILotteryOrchestrator {
             const apartmentType = this.typeDetector.determineType(selectedApartment);
 
             // ========== PASSO 3: SORTEAR VAGA ==========
-            const spotData = this.spotSelector.selectSpot(apartmentType, garage);
+            const spotData = this.spotSelector.selectSpot(selectedApartment, garage);
 
             if (!spotData) {
                 return {
@@ -165,12 +166,16 @@ export class LotteryOrchestrator extends ILotteryOrchestrator {
         let currentGarage = garage.clone();
         let drawCount = 0;
 
-        // ========== PRÉ-RESERVA PARA APARTAMENTOS DUPLOS ==========
+        // ========== PRÉ-RESERVA PARA APARTAMENTOS DUPLOS (COM FILTRAGEM) ==========
         const doubleApartments = apartments.filter(apt => apt.dupla && apt.isAvailableForDraw());
         const doublePairCount = doubleApartments.length;
-        
+
         if (doublePairCount > 0) {
-            const preReserveSuccess = currentGarage.preReserveDoublePairs(doublePairCount);
+            // 🎯 NOVO: Obter vagas proibidas (base + estendidas)
+            const vagasProibidasDuplo = getVagasProibidasDuplo();
+
+            // Usar sistema de pré-reserva com filtragem de vagas proibidas
+            const preReserveSuccess = currentGarage.preReserveDoublePairs(doublePairCount, vagasProibidasDuplo);
             if (!preReserveSuccess) {
                 console.log(`⚠️ Não foi possível pré-reservar ${doublePairCount} pares para apartamentos duplos`);
                 return {

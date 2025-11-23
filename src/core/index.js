@@ -74,7 +74,7 @@ export class LotterySystemFactory {
         // Criar serviços específicos
         const apartmentSelector = new ApartmentSelectionService(randomnessService);
         const typeDetector = new ApartmentTypeService(isExtendedApartmentFn);
-        const spotSelector = new SpotSelectionService(randomnessService, isExtendedSpotFn);
+        const spotSelector = new SpotSelectionService(randomnessService, isExtendedSpotFn, typeDetector);
         const spotAssigner = new SpotAssignmentService(validationService);
 
         // Criar orquestrador principal

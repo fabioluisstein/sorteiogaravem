@@ -1,0 +1,46 @@
+{
+    {
+        "testEnvironment": "node",
+        {
+            "transform": {
+                "testEnvironment": "node",
+                "^.+\\.js$": "babel-jest""type": "module",
+            },
+            "transform": {
+                "moduleNameMapper": {
+                    "preset": "default",
+                    "^(\\.{1,2}/.*)\\.js$": "$1""^.+\\.js$": "babel-jest""testEnvironment": "node",
+                },
+            },
+            "testMatch": [
+                "transform": {
+                    "**/src/tests/**/*.test.js""moduleNameMapper": {
+                ],
+                "^.+\\.js$": "babel-jest""^(\\.{1,2}/.*)\\.js$": "$1""verbose": true
+            },
+        }
+    },
+    "moduleNameMapping": {
+        "testMatch": [
+            "^(\\.{1,2}/.*)\\.js$": "$1""**/src/tests/**/*.test.js"
+        },
+    ],
+    "testMatch": [
+        "collectCoverageFrom": [
+            "**/src/tests/**/*.test.js""src/**/*.js",
+        ],
+        "!src/tests/**",
+        "collectCoverageFrom": [
+            "!**/node_modules/**""src/**/*.js",
+        ],
+        "!src/tests/**",
+        "verbose": true,
+        "!**/node_modules/**""extensionsToTreatAsEsm": [
+            ".js"
+        ]
+    ],
+}    "verbose": true,
+"setupFilesAfterEnv": [
+    "<rootDir>/src/tests/setup/jest.setup.js"
+]
+}
