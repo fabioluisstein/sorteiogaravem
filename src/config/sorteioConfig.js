@@ -234,16 +234,19 @@ export class ConfigReader {
       console.log(`   - Apartamentos estendidos: ${apartamentosExtendidos.length}`);
       console.log(`   - Vagas estendidas: ${vagasEstendidas.length}`);
 
-      // Remover excedente do final da lista de estendidas
-      const convertidas = vagasEstendidas.slice(-excedentes);
-      const vagasEstendidasReduzidas = vagasEstendidas.filter(v => !convertidas.includes(v));
+      // 🚫 CORREÇÃO CRÍTICA: NÃO remover vagas da lista de estendidas!
+      // Vagas estendidas são fisicamente estendidas e NUNCA podem ser simples
+      // Em vez disso, apenas alertamos sobre a sobra
+      const vagasOrfas = vagasEstendidas.slice(-excedentes);
 
-      // Atualizar configuração
-      this.config.vagas_estendidas = vagasEstendidasReduzidas;
+      console.log(`⚠️ VAGAS ESTENDIDAS ÓRFÃS: ${vagasOrfas.join(', ')}`);
+      console.log(`🔒 Estas vagas permanecem estendidas e ficam RESERVADAS`);
+      console.log(`   - Vagas estendidas ativas: ${vagasEstendidas.slice(0, apartamentosExtendidos.length).join(', ')}`);
+      console.log(`   - Vagas estendidas órfãs (bloqueadas): ${vagasOrfas.join(', ')}`);
+      console.log(`   ✅ MANUTENÇÃO: ${apartamentosExtendidos.length} apartamentos para ${apartamentosExtendidos.length} vagas ativas`);
+      console.log(`   🔒 BLOQUEADAS: ${excedentes} vagas estendidas órfãs protegidas`);
 
-      console.log(`🔄 Convertendo vagas estendidas excedentes para simples: ${convertidas.join(', ')}`);
-      console.log(`   - Vagas estendidas restantes: ${vagasEstendidasReduzidas.join(', ')}`);
-      console.log(`   ✅ Conversão realizada: ${apartamentosExtendidos.length} apartamentos para ${vagasEstendidasReduzidas.length} vagas estendidas`);
+      // NÃO alterar this.config.vagas_estendidas - manter todas as vagas estendidas protegidas!
     } else {
       console.log(`✅ Vagas estendidas balanceadas: ${vagasEstendidas.length} vagas para ${apartamentosExtendidos.length} apartamentos`);
     }
