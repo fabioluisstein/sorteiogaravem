@@ -701,9 +701,9 @@ export default function GarageLotteryApp() {
     if (spot.blocked) return COLORS.blocked;
     if (spot.occupiedBy) return COLORS.selected;
 
-    // Verificar se é uma vaga estendida
+    // Verificar se é uma vaga com localização física diferente (sempre laranja)
     const vagaNumber = positionToSequentialNumber(spot.floor, spot.side, spot.pos);
-    if (isVagaEstendida(vagaNumber)) return COLORS.extended;
+    if ([7, 8, 21, 22, 35, 36].includes(vagaNumber)) return COLORS.extended;
 
     return COLORS.free; // sempre verde se livre (mesmo que pertencente a um par reservado)
   };
