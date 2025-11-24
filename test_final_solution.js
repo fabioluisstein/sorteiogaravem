@@ -20,7 +20,7 @@ total_vagas=42
 console.log('\n1. 📊 CENÁRIO ORIGINAL (PROBLEMÁTICO):');
 console.log('   - Total de vagas: 42');
 console.log('   - Apartamentos duplos: 14 (precisam 28 vagas)');
-console.log('   - Apartamentos estendidos: 5 (precisam 5 vagas)');  
+console.log('   - Apartamentos estendidos: 5 (precisam 5 vagas)');
 console.log('   - Apartamentos simples: 9 (precisam 9 vagas)');
 console.log('   - Vagas estendidas: 6');
 console.log('   - PROBLEMA: 28 + 6 + 8 = 42 vagas, mas só 8 vagas para 9 simples!');

@@ -25,9 +25,9 @@ const apartments = [
 const spots = [];
 for (let i = 1; i <= 10; i++) {
     const floor = i <= 5 ? 'G1' : 'G2';
-    const side = ['A', 'B'][Math.floor((i-1) % 2)];
-    const pos = Math.floor((i-1) / 2) + 1;
-    
+    const side = ['A', 'B'][Math.floor((i - 1) % 2)];
+    const pos = Math.floor((i - 1) / 2) + 1;
+
     const spot = new Spot(i, floor, side, pos);
     spots.push(spot);
 }
@@ -41,9 +41,9 @@ const spotSelector = new SpotSelectionService();
 const spotAssigner = new SpotAssignmentService();
 
 const orchestrator = new LotteryOrchestrator(
-    apartmentSelector, 
-    typeDetector, 
-    spotSelector, 
+    apartmentSelector,
+    typeDetector,
+    spotSelector,
     spotAssigner
 );
 

@@ -47,15 +47,32 @@ export class LotteryOrchestrator extends ILotteryOrchestrator {
             const selectedApartment = this.apartmentSelector.selectRandomApartment(apartments);
 
             if (!selectedApartment) {
-                return {
-                    success: false,
-                    step: 1,
-                    message: 'Nenhum apartamento disponível para sorteio',
-                    apartment: null,
-                    apartmentType: null,
-                    spotData: null,
-                    assignmentResult: null
-                };
+                // 🎉 Verificar se todos os apartamentos foram sorteados
+                const apartmentosDisponiveis = apartments.filter(apt => apt.isAvailableForDraw());
+                const todosApartamentosSorteados = apartmentosDisponiveis.length === 0;
+
+                if (todosApartamentosSorteados) {
+                    return {
+                        success: true,
+                        step: 1,
+                        message: '🎉 Sorteio foi finalizado com sucesso. Todos os apartamentos foram sorteados',
+                        apartment: null,
+                        apartmentType: null,
+                        spotData: null,
+                        assignmentResult: null,
+                        allApartmentsSorted: true
+                    };
+                } else {
+                    return {
+                        success: false,
+                        step: 1,
+                        message: 'Nenhum apartamento disponível para sorteio',
+                        apartment: null,
+                        apartmentType: null,
+                        spotData: null,
+                        assignmentResult: null
+                    };
+                }
             }
 
             // ========== PASSO 2: IDENTIFICAR TIPO ==========
@@ -200,6 +217,13 @@ export class LotteryOrchestrator extends ILotteryOrchestrator {
             const result = this.executeSorting(apartments, currentGarage);
             results.push(result);
 
+            // Se o resultado indica que todos os apartamentos foram sorteados (sucesso de finalização)
+            if (result.allApartmentsSorted) {
+                console.log('🎉 Sorteio foi finalizado com sucesso.');
+                console.log('✅ Todos os apartamentos foram sorteados');
+                break;
+            }
+
             if (!result.success) {
                 // Parar se não há mais apartamentos ou vagas disponíveis
                 break;
@@ -210,14 +234,9 @@ export class LotteryOrchestrator extends ILotteryOrchestrator {
             drawCount++;
         }
 
-        // 🎉 VERIFICAR SE TODOS OS APARTAMENTOS FORAM SORTEADOS
+        // 🎉 VERIFICAR SE TODOS OS APARTAMENTOS FORAM SORTEADOS (final status)
         const apartmentosDisponiveis = apartments.filter(apt => apt.isAvailableForDraw());
         const todosApartamentosSorteados = apartmentosDisponiveis.length === 0;
-        
-        if (todosApartamentosSorteados && results.filter(r => r.success).length > 0) {
-            console.log('🎉 Sorteio foi finalizado com sucesso.');
-            console.log('✅ Todos os apartamentos foram sorteados');
-        }
 
         return {
             totalDraws: drawCount,

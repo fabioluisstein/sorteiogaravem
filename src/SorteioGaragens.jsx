@@ -337,6 +337,14 @@ export default function GarageLotteryApp() {
       const result = lotterySystem.current.orchestrator.executeSorting(solidApartments, solidGarage);
 
       if (result.success) {
+        // 🎉 Verificar se todos os apartamentos foram sorteados
+        if (result.allApartmentsSorted) {
+          console.log('🎉 Sorteio foi finalizado com sucesso.');
+          console.log('✅ Todos os apartamentos foram sorteados');
+          alert('🎉 Sorteio foi finalizado com sucesso! Todos os apartamentos foram sorteados.');
+          return; // Sair da função pois não há mais nada para fazer
+        }
+
         // Converter resultado de volta para formato da UI
         const spotIds = result.spotData.type === 'double'
           ? [result.spotData.pair.aId, result.spotData.pair.bId]
@@ -370,8 +378,22 @@ export default function GarageLotteryApp() {
         console.log(`✅ Sorteio concluído: Apartamento ${result.apartment.id} → Vagas ${spotIds.join(', ')}`);
         console.log(`✅ Sorteio concluído: Apartamento ${result.apartment.id} → Vagas ${spotIds.join(', ')}`);
       } else {
-        console.log(`❌ Falha no sorteio: ${result.message}`);
-        alert(`Falha no sorteio: ${result.message}`);
+        // 🎉 Verificar se todos os apartamentos foram sorteados
+        if (result.allApartmentsSorted) {
+          console.log('🎉 Sorteio foi finalizado com sucesso.');
+          console.log('✅ Todos os apartamentos foram sorteados');
+          alert('🎉 Sorteio foi finalizado com sucesso! Todos os apartamentos foram sorteados.');
+          
+          // 🖨️ Automaticamente abrir a página de impressão para preservar o resultado
+          console.log('🖨️ Abrindo página de impressão automaticamente...');
+          setTimeout(() => {
+            generatePrintList();
+          }, 500); // Pequeno delay para garantir que o alert seja fechado primeiro
+          
+        } else {
+          console.log(`❌ Falha no sorteio: ${result.message}`);
+          alert(`Falha no sorteio: ${result.message}`);
+        }
       }
 
     } catch (error) {
@@ -384,6 +406,24 @@ export default function GarageLotteryApp() {
 
   /* Reset */
   const clearAll = () => {
+    // 🛡️ Verificar se todos os apartamentos foram sorteados antes de limpar
+    const apartmentosDisponiveis = apartments.filter(apt => !apt.sorteado);
+    const todosApartamentosSorteados = apartmentosDisponiveis.length === 0 && apartments.length > 0;
+    
+    if (todosApartamentosSorteados) {
+      const confirmacao = window.confirm(
+        '⚠️ ATENÇÃO: O sorteio foi FINALIZADO com todos os apartamentos sorteados!\n\n' +
+        'Você tem certeza que deseja LIMPAR TUDO e perder o resultado do sorteio?\n\n' +
+        '💡 Recomendamos que você imprima a lista primeiro.\n\n' +
+        'Deseja continuar mesmo assim?'
+      );
+      
+      if (!confirmacao) {
+        console.log('🛡️ Limpeza cancelada pelo usuário - sorteio preservado');
+        return; // Não limpa se o usuário cancelar
+      }
+    }
+    
     setGarage(buildInitialGarage());
     setApartments(buildInitialApartments());
     setLastDraw(null);
