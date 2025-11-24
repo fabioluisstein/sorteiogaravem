@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { SorteioSimples } from '../SorteioSimples.js';
+// Import package.json to show app version in the UI
+import pkg from '../../package.json';
 
 const SorteioSimplesComponent = () => {
 
@@ -272,7 +274,10 @@ const SorteioSimplesComponent = () => {
                 `}
             </style>
 
-            <h1>🎲 Sorteio Garagem — Edifício Flor de Lis</h1>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>🎲 Sorteio Garagem — Edifício Flor de Lis</span>
+                <small style={{ background: '#f1f3f5', padding: '4px 8px', borderRadius: '6px', fontSize: '13px', color: '#333' }}>v{pkg.version}</small>
+            </h1>
 
             {/* Botões */}
             <div className="controls" style={{ marginBottom: '20px' }}>
