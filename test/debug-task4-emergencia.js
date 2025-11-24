@@ -90,7 +90,7 @@ console.log('=================================================================='
 
 // Apartamento 403 tem reserva e deve usar apenas ela
 const apartamento403 = { id: 403, dupla: false };
-const resultado403 = strategy.execute(apartamento403, garagemSoEstendidas);
+const resultado403 = strategy.execute(apartamento403, garagemSo);
 
 console.log(`Resultado: ${resultado403.success ? 'SUCESSO' : 'FALHA'}`);
 if (resultado403.success && resultado403.spotType === 'extended-reserved') {

@@ -8,6 +8,10 @@ const SorteioSimplesComponent = () => {
     const [resultado, setResultado] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    // Modo rápido para testes: se a URL contiver o query param '1' então
+    // pulamos delays e não exibimos a modal (mostramos resultado imediatamente)
+    const fastMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('1');
+
     // ESTADOS DO PROCESSO SIMULADO
     const [showModal, setShowModal] = useState(false);
     const [progressoTexto, setProgressoTexto] = useState('');
@@ -43,8 +47,17 @@ const SorteioSimplesComponent = () => {
 
         setListaSorteio(ordemRandomica);
         setResultadoFinalTemp(resultadoReal);
+        // Se estivermos em modo rápido (query ?1 presente) não mostramos a modal
+        // nem aplicamos delays: exibimos o resultado imediatamente para facilitar testes
+        if (fastMode) {
+            setResultado(resultadoReal);
+            setShowModal(false);
+            setLoading(false);
+            // Também armazenamos a lista para inspeção se necessário
+            return;
+        }
 
-        // Configura modal inicial
+        // Configura modal inicial (modo normal)
         setIndiceAtual(0);
         setProgressoPercentual(0);
         setProgressoTexto("Pronto para iniciar!");
@@ -63,9 +76,10 @@ const SorteioSimplesComponent = () => {
         setProgressoTexto("Sorteando...");
 
         const item = listaSorteio[indiceAtual];
-        const delayMs = Math.floor(Math.random() * 1500) + 1500; // 1500–3000 ms
+        // Em modo rápido não usamos delay
+        const delayMs = fastMode ? 0 : (Math.floor(Math.random() * 1500) + 1500); // 1500–3000 ms
 
-        await delay(delayMs);
+        if (delayMs > 0) await delay(delayMs);
 
         setProgressoTexto(
             `Apto ${item.apartamento} → vaga(s): ${item.vagas.join(', ')}`
