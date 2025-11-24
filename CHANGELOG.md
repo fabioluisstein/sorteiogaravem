@@ -1,5 +1,48 @@
 # 📋 CHANGELOG - Sorteio de Garagens Flor de Lis
 
+## 🎉 [v2.1.0] - 24/11/2025 - Sistema Simplificado Final
+
+### ✨ Mudanças Principais
+- **REFATORAÇÃO COMPLETA**: Removido sistema SOLID complexo
+- **INTERFACE ÚNICA**: Apenas sorteio simples, sem seleção de modos
+- **LAYOUT CENTRALIZADO**: Interface perfeitamente centralizada e responsiva
+- **CÓDIGO LIMPO**: Arquitetura simplificada e otimizada
+
+### 🚀 Funcionalidades
+- ✅ **18 pares oficiais** validados e testados
+- ✅ **6 vagas estendidas** (7, 8, 21, 22, 35, 36)
+- ✅ **Geração de PDF** profissional com layout moderno
+- ✅ **Validação completa** de 28 apartamentos/42 vagas
+- ✅ **Interface responsiva** para diferentes dispositivos
+
+### 🗂️ Arquitetura Simplificada
+```
+src/
+├── App.jsx                          # Aplicação principal
+├── SorteioSimples.js               # Lógica do sorteio
+├── components/
+│   └── SorteioSimplesComponent.jsx # Interface React
+├── App.css / index.css             # Estilos centralizados
+└── main.jsx                        # Ponto de entrada
+```
+
+### 🔧 Melhorias Técnicas
+- **Performance**: Código otimizado sem complexidade desnecessária
+- **Manutenibilidade**: Estrutura simples e direta
+- **Responsividade**: Layout adaptável para mobile/desktop
+- **Acessibilidade**: Cores e contrastes adequados
+
+### ❌ Removido
+- Sistema SOLID complexo (`core/`, `config/`, `tests/`)
+- Seleção de modos desnecessária
+- Arquivos de backup e código antigo
+- Dependências complexas
+
+### 🎯 Status
+**✅ PRONTO PARA PRODUÇÃO** - Sistema estável e testado
+
+---
+
 ## [v2.2.0] - 2025-11-21 🚀 **MAJOR UPDATE - AUTOMAÇÃO COMPLETA**
 
 ### 🎯 **Principais Adições**
