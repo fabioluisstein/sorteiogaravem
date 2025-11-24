@@ -108,7 +108,7 @@ export class SorteioSimples {
         }
 
         // 4 apartamentos estendidos (ids específicos)
-        const estendidosIds = [603, 204, 704, 303];
+        const estendidosIds = [603, 204, 704, 401];
         for (let idx = 0; idx < estendidosIds.length; idx++) {
             const i = estendidosIds[idx];
             apartamentos.push({
@@ -120,7 +120,7 @@ export class SorteioSimples {
         }
 
         // 10 apartamentos simples (ids específicos)
-        const simplesIds = [201, 202, 302, 401, 403, 503, 504, 601, 602, 703];
+        const simplesIds = [201, 202, 302, 303, 403, 503, 504, 601, 602, 703];
         for (let idx = 0; idx < simplesIds.length; idx++) {
             const i = simplesIds[idx];
             apartamentos.push({
