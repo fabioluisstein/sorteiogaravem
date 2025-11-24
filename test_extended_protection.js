@@ -42,12 +42,12 @@ const garage = new Garage();
 // Adicionar todas as 42 vagas
 for (let i = 1; i <= 42; i++) {
     const isExtended = sorteioConfig.vagasEstendidas.includes(i);
-    garage.addSpot({ 
-        id: i, 
-        andar: `G${Math.ceil(i/14)}`, 
-        setor: String.fromCharCode(65 + Math.floor((i-1)/7)), 
-        posicao: ((i-1) % 7) + 1, 
-        estendida: isExtended 
+    garage.addSpot({
+        id: i,
+        andar: `G${Math.ceil(i / 14)}`,
+        setor: String.fromCharCode(65 + Math.floor((i - 1) / 7)),
+        posicao: ((i - 1) % 7) + 1,
+        estendida: isExtended
     });
 }
 
@@ -68,7 +68,7 @@ console.log('🔍 Verificando vagas disponíveis para apartamentos simples...');
 
 const apartamentoSimples = apartamentos[0];
 const options = garage.getAvailableOptionsForApartment(
-    apartamentoSimples, 
+    apartamentoSimples,
     (vagaId) => sorteioConfig.vagasEstendidas.includes(vagaId),
     (apartamentoId) => sorteioConfig.apartamentosVagasEstendidas.includes(apartamentoId)
 );
@@ -78,7 +78,7 @@ console.log(`   - Vagas disponíveis: ${options.spots.length}`);
 console.log(`   - IDs das vagas: [${options.spots.map(s => s.id).join(', ')}]`);
 
 // Verificar se alguma vaga estendida está disponível para simples
-const vagasEstendidasDisponiveis = options.spots.filter(spot => 
+const vagasEstendidasDisponiveis = options.spots.filter(spot =>
     sorteioConfig.vagasEstendidas.includes(spot.id)
 );
 
@@ -96,26 +96,26 @@ console.log('\n🎲 Executando sorteios de teste...\n');
 
 for (let i = 0; i < apartamentos.length; i++) {
     const result = orchestrator.executeSorting([apartamentos[i]], garage);
-    
+
     if (result.success) {
         const vagaId = result.spotData.spot.id;
         const isVagaEstendida = sorteioConfig.vagasEstendidas.includes(vagaId);
-        
-        console.log(`${i+1}. Apartamento ${result.apartment.id} → Vaga ${vagaId} ${isVagaEstendida ? '(ESTENDIDA)' : '(normal)'}`);
-        
+
+        console.log(`${i + 1}. Apartamento ${result.apartment.id} → Vaga ${vagaId} ${isVagaEstendida ? '(ESTENDIDA)' : '(normal)'}`);
+
         if (isVagaEstendida) {
             console.log(`   ❌ ERRO: Apartamento simples recebeu vaga estendida!`);
         } else {
             console.log(`   ✅ OK: Apartamento simples recebeu vaga normal`);
         }
-        
+
         // Marcar vaga como ocupada
         garage.spots[vagaId - 1].ocupada = true;
         garage.spots[vagaId - 1].apartamento = result.apartment.id;
         result.apartment.sorteado = true;
-        
+
     } else {
-        console.log(`${i+1}. ❌ Falha no sorteio: ${result.message}`);
+        console.log(`${i + 1}. ❌ Falha no sorteio: ${result.message}`);
     }
 }
 

@@ -5,13 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run test:all && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "sync-config.bat && npm run dev",
     "start": "npm run deploy",
     "sync-config": "sync-config.bat",
-    "dev:watch": "concurrently \"node scripts/auto-sync.js\" \"npm run dev\""
+    "dev:watch": "concurrently \"node scripts/auto-sync.js\" \"npm run dev\"",
+    "test": "jest",
+    "test:stress": "jest __tests__/stress-lottery-mock.test.js --verbose",
+    "test:stress-real": "node test_stress_1000_sorteios.js",
+    "test:stress-extreme": "node test_stress_1_milhao.js",
+    "test:demo": "node test_stress_demo.js",
+    "test:all": "npm run test:basic && npm run test:stress && npm run test:demo",
+    "test:basic": "node test_basic.js",
+    "test:full": "npm run test:stress-real"
   },
   "dependencies": {
     "react": "^19.1.1",
