@@ -1,6 +1,40 @@
 # 📋 CHANGELOG - Sorteio de Garagens Flor de Lis
 
-## 🎉 [v2.1.0] - 24/11/2025 - Sistema Simplificado Final
+## � [v2.2.0] - 24/11/2025 - Layout de Impressão Profissional
+
+### ✨ Principal Melhoria
+- **LAYOUT PDF REDESENHADO**: Design profissional completamente novo para impressão
+
+### 🎨 Design Profissional
+- **Grid 3x3 Organizado**: Resultados em layout limpo e estruturado
+- **Cores Diferenciadas**: Vermelho (duplas), Laranja (estendidas), Verde (simples)
+- **Gradientes Modernos**: Visual elegante em headers e botões
+- **Tipografia Otimizada**: Fontes e tamanhos ideais para leitura
+
+### 📄 Otimizações para Impressão
+- **Formato A4**: Margens e layout otimizados para papel
+- **Media Queries**: CSS específico para impressão perfeita
+- **Quebras de Página**: Controle inteligente de paginação
+- **Tamanhos Adaptados**: Fontes e espaçamentos para impressão
+
+### 🚀 Funcionalidades Avançadas
+- **Foco Automático**: Botão de impressão selecionado automaticamente
+- **Atalho Ctrl+P**: Impressão rápida via teclado
+- **Hover Effects**: Transições suaves e feedback visual
+- **Informações Completas**: IDs dos pares oficiais (G1-1-2, G2-15-16, etc.)
+
+### 📊 Conteúdo Organizado
+- **Resumo Executivo**: Box com estatísticas detalhadas do sorteio
+- **Seções Coloridas**: Visual distinto para cada tipo de apartamento
+- **Footer Profissional**: Identidade visual e data/hora
+- **Dados Completos**: Todas as informações necessárias para documentação
+
+### 🎯 Status
+**✅ PRODUÇÃO** - PDF pronto para documentação oficial do condomínio
+
+---
+
+## �🎉 [v2.1.0] - 24/11/2025 - Sistema Simplificado Final
 
 ### ✨ Mudanças Principais
 - **REFATORAÇÃO COMPLETA**: Removido sistema SOLID complexo
