@@ -100,7 +100,6 @@ const SorteioSimplesComponent = () => {
         }
 
         const printWindow = window.open('', '_blank');
-
         const agora = new Date();
         const dataFormatada = agora.toLocaleDateString('pt-BR');
         const horaFormatada = agora.toLocaleTimeString('pt-BR');
@@ -110,222 +109,63 @@ const SorteioSimplesComponent = () => {
         const estendidos = resultado.resultados.filter(r => r.tipo === 'estendido').sort((a, b) => a.apartamento - b.apartamento);
         const simples = resultado.resultados.filter(r => r.tipo === 'simples').sort((a, b) => a.apartamento - b.apartamento);
 
+        // Função para destacar apt 303
+        const highlight303 = (apto) => apto === 303 ? 'background: #ffe8e8; border: 2px solid #e74c3c;' : '';
+        const badge303 = (apto) => apto === 303 ? '<span style="color:#e74c3c;font-weight:bold;font-size:11px;margin-left:6px;">Regra Especial</span>' : '';
+
         const conteudoHTML = `
         <!DOCTYPE html>
         <html lang="pt-BR">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Resultado do Sorteio de Garagens - Flor de Lis</title>
+            <title>Sorteio de Garagens — Edifício Flor de Lis</title>
             <style>
-                @page {
-                    size: A4;
-                    margin: 1.5cm;
-                }
-                
-                * {
-                    box-sizing: border-box;
-                    margin: 0;
-                    padding: 0;
-                }
-                
-                body {
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    line-height: 1.4;
-                    color: #2c3e50;
-                    font-size: 12px;
-                }
-                
-                .header {
-                    text-align: center;
-                    border-bottom: 3px solid #3498db;
-                    padding-bottom: 15px;
-                    margin-bottom: 25px;
-                }
-                
-                .header h1 {
-                    font-size: 22px;
-                    color: #2c3e50;
-                    margin-bottom: 8px;
-                    font-weight: 700;
-                }
-                
-                .header .subtitle {
-                    font-size: 16px;
-                    color: #34495e;
-                    font-weight: 600;
-                }
-                
-                .header .datetime {
-                    font-size: 14px;
-                    color: #7f8c8d;
-                    margin-top: 8px;
-                }
-                
-                .summary-box {
-                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-                    border: 1px solid #dee2e6;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin-bottom: 25px;
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 20px;
-                }
-                
-                .summary-item {
-                    font-size: 11px;
-                }
-                
-                .summary-item strong {
-                    color: #2c3e50;
-                    font-size: 12px;
-                }
-                
-                .section {
-                    margin-bottom: 25px;
-                    page-break-inside: avoid;
-                }
-                
-                .section-header {
-                    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-                    color: white;
-                    padding: 10px 15px;
-                    border-radius: 6px;
-                    margin-bottom: 12px;
-                    font-weight: 600;
-                    font-size: 14px;
-                    text-align: center;
-                }
-                
-                .section-header.duplos {
-                    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-                }
-                
-                .section-header.estendidos {
-                    background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
-                }
-                
-                .section-header.simples {
-                    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-                }
-                
-                .results-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 8px;
-                }
-                
-                .result-item {
-                    background: #ffffff;
-                    border: 1px solid #bdc3c7;
-                    border-radius: 5px;
-                    padding: 10px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    min-height: 40px;
-                    transition: all 0.2s ease;
-                }
-                
-                .result-item:hover {
-                    background: #f8f9fa;
-                    transform: translateY(-1px);
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-                
-                .apartment {
-                    font-weight: 700;
-                    font-size: 13px;
-                    color: #2c3e50;
-                }
-                
-                .spots {
-                    color: #34495e;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                
-                .pair-info {
-                    font-size: 9px;
-                    color: #7f8c8d;
-                    font-style: italic;
-                    text-align: right;
-                    line-height: 1.2;
-                }
-                
-                .footer {
-                    margin-top: 30px;
-                    text-align: center;
-                    border-top: 2px solid #ecf0f1;
-                    padding-top: 15px;
-                    font-size: 10px;
-                    color: #7f8c8d;
-                }
-                
-                .print-controls {
-                    text-align: center;
-                    margin: 20px 0;
-                    padding: 15px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                }
-                
-                .print-btn {
-                    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-                    color: white;
-                    padding: 12px 30px;
-                    border: none;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    margin: 5px;
-                    transition: all 0.2s ease;
-                }
-                
-                .print-btn:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-                }
-                
-                .close-btn {
-                    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-                }
-                
-                @media print {
-                    .print-controls {
-                        display: none !important;
-                    }
-                    
-                    body {
-                        font-size: 11px;
-                    }
-                    
-                    .section {
-                        page-break-inside: avoid;
-                        margin-bottom: 20px;
-                    }
-                    
-                    .results-grid {
-                        grid-template-columns: repeat(3, 1fr);
-                        gap: 6px;
-                    }
-                    
-                    .result-item {
-                        min-height: 35px;
-                        padding: 8px;
-                    }
-                }
+                @page { size: A4; margin: 1.5cm; }
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.4; color: #2c3e50; font-size: 12px; }
+                .header { text-align: center; border-bottom: 3px solid #3498db; padding-bottom: 15px; margin-bottom: 25px; }
+                .header h1 { font-size: 22px; color: #2c3e50; margin-bottom: 8px; font-weight: 700; }
+                .header .subtitle { font-size: 16px; color: #34495e; font-weight: 600; }
+                .header .datetime { font-size: 14px; color: #7f8c8d; margin-top: 8px; }
+                .legend { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 10px 15px; margin-bottom: 18px; font-size: 11px; }
+                .legend span { display: inline-block; margin-right: 18px; }
+                .legend .duplo { color: #e74c3c; font-weight: bold; }
+                .legend .estendido { color: #f39c12; font-weight: bold; }
+                .legend .simples { color: #27ae60; font-weight: bold; }
+                .legend .especial { color: #e74c3c; font-weight: bold; }
+                .summary-box { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .summary-item { font-size: 11px; }
+                .summary-item strong { color: #2c3e50; font-size: 12px; }
+                .section { margin-bottom: 25px; page-break-inside: avoid; }
+                .section-header { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 10px 15px; border-radius: 6px; margin-bottom: 12px; font-weight: 600; font-size: 14px; text-align: center; }
+                .section-header.duplos { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+                .section-header.estendidos { background: linear-gradient(135deg, #f39c12 0%, #d68910 100%); }
+                .section-header.simples { background: linear-gradient(135deg, #27ae60 0%, #229954 100%); }
+                .results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+                .result-item { background: #ffffff; border: 1px solid #bdc3c7; border-radius: 5px; padding: 10px; display: flex; justify-content: space-between; align-items: center; min-height: 40px; transition: all 0.2s ease; }
+                .apartment { font-weight: 700; font-size: 13px; color: #2c3e50; }
+                .spots { color: #34495e; font-size: 12px; font-weight: 500; }
+                .pair-info { font-size: 9px; color: #7f8c8d; font-style: italic; text-align: right; line-height: 1.2; }
+                .footer { margin-top: 30px; text-align: center; border-top: 2px solid #ecf0f1; padding-top: 15px; font-size: 10px; color: #7f8c8d; }
+                .print-controls { text-align: center; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+                .print-btn { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 12px 30px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; margin: 5px; transition: all 0.2s ease; }
+                .print-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3); }
+                .close-btn { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
+                @media print { .print-controls { display: none !important; } body { font-size: 11px; } .section { page-break-inside: avoid; margin-bottom: 20px; } .results-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; } .result-item { min-height: 35px; padding: 8px; } }
             </style>
         </head>
         <body>
             <div class="header">
-                <h1>🏢 RESULTADO DO SORTEIO DE GARAGENS</h1>
-                <div class="subtitle">Condomínio Flor de Lis</div>
+                <h1>🏢 SORTEIO DE GARAGENS — EDIFÍCIO FLOR DE LIS</h1>
+                <div class="subtitle">Edifício Flor de Lis</div>
                 <div class="datetime">${dataFormatada} • ${horaFormatada}</div>
             </div>
-
+            <div class="legend">
+                <span class="duplo">■ Duplo</span>
+                <span class="estendido">■ Estendido</span>
+                <span class="simples">■ Simples</span>
+                <span class="especial">■ Regra Especial: apto 303</span>
+            </div>
             <div class="summary-box">
                 <div class="summary-item">
                     <strong>📊 Resumo do Sorteio:</strong><br>
@@ -340,89 +180,54 @@ const SorteioSimplesComponent = () => {
                     • Apartamentos — Vaga Simples: ${simples.length}/${simples.length}
                 </div>
             </div>
-
             <div class="section">
-                <div class="section-header duplos">
-                    🏢 APARTAMENTOS — VAGAS DUPLAS (${duplos.length})
-                </div>
+                <div class="section-header duplos">🏢 APARTAMENTOS — VAGAS DUPLAS (${duplos.length})</div>
                 <div class="results-grid">
                     ${duplos.map(item => {
-            const par = sorteio.pares.find(p =>
-                p.vagas.includes(item.vagas[0]) && p.vagas.includes(item.vagas[1])
-            );
-            return `
-                            <div class="result-item">
-                                <span class="apartment">Apto ${item.apartamento}</span>
-                                <div style="text-align: right;">
-                                    <div class="spots">Vagas ${item.vagas.join(', ')}</div>
-                                    <div class="pair-info">${par ? par.id : 'Par não identificado'}</div>
-                                </div>
+            const par = sorteio.pares.find(p => [p.vagaA, p.vagaB].includes(item.vagas[0]) && [p.vagaA, p.vagaB].includes(item.vagas[1]));
+            return `<div class="result-item" style="${highlight303(item.apartamento)}">
+                            <span class="apartment">Apto ${item.apartamento} ${badge303(item.apartamento)}</span>
+                            <div style="text-align: right;">
+                                <div class="spots">Vagas ${item.vagas.join(', ')}</div>
+                                <div class="pair-info">${par ? par.id : 'Par não identificado'}</div>
                             </div>
-                        `;
+                        </div>`;
         }).join('')}
                 </div>
             </div>
-
             <div class="section">
-                <div class="section-header estendidos">
-                    🏗️ APARTAMENTOS — VAGAS DUPLAS (ESTENDIDAS) (${estendidos.length})
-                </div>
+                <div class="section-header estendidos">🏗️ APARTAMENTOS — VAGAS DUPLAS (ESTENDIDAS) (${estendidos.length})</div>
                 <div class="results-grid">
-                    ${estendidos.map(item => `
-                        <div class="result-item">
-                            <span class="apartment">Apto ${item.apartamento}</span>
-                            <div class="spots">Vaga ${item.vagas[0]}</div>
-                        </div>
-                    `).join('')}
+                    ${estendidos.map(item => `<div class="result-item" style="${highlight303(item.apartamento)}">
+                        <span class="apartment">Apto ${item.apartamento} ${badge303(item.apartamento)}</span>
+                        <div class="spots">Vaga ${item.vagas[0]}</div>
+                    </div>`).join('')}
                 </div>
             </div>
-
             <div class="section">
-                <div class="section-header simples">
-                    🏠 APARTAMENTOS — VAGA SIMPLES (${simples.length})
-                </div>
+                <div class="section-header simples">🏠 APARTAMENTOS — VAGA SIMPLES (${simples.length})</div>
                 <div class="results-grid">
-                    ${simples.map(item => `
-                        <div class="result-item">
-                            <span class="apartment">Apto ${item.apartamento}</span>
-                            <div class="spots">Vaga ${item.vagas[0]}</div>
-                        </div>
-                    `).join('')}
+                    ${simples.map(item => `<div class="result-item" style="${highlight303(item.apartamento)}">
+                        <span class="apartment">Apto ${item.apartamento} ${badge303(item.apartamento)}</span>
+                        <div class="spots">Vaga ${item.vagas[0]}</div>
+                    </div>`).join('')}
                 </div>
             </div>
-
             <div class="footer">
                 <p><strong>Documento gerado automaticamente pelo Sistema de Sorteio Simples</strong></p>
-                <p>Condomínio Flor de Lis • ${dataFormatada} ${horaFormatada}</p>
+                <p>Edifício Flor de Lis • ${dataFormatada} ${horaFormatada}</p>
             </div>
-
             <div class="print-controls">
-                <button class="print-btn" onclick="window.print()">
-                    🖨️ Imprimir / Salvar PDF
-                </button>
-                <button class="print-btn close-btn" onclick="window.close()">
-                    ❌ Fechar
-                </button>
+                <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+                <button class="print-btn close-btn" onclick="window.close()">❌ Fechar</button>
             </div>
-
             <script>
-                // Foco automático no botão de impressão
-                window.onload = function() {
-                    document.querySelector('.print-btn').focus();
-                };
-                
-                // Atalho de teclado Ctrl+P
-                document.addEventListener('keydown', function(e) {
-                    if (e.ctrlKey && e.key === 'p') {
-                        e.preventDefault();
-                        window.print();
-                    }
-                });
+                window.onload = function() { document.querySelector('.print-btn').focus(); };
+                document.addEventListener('keydown', function(e) { if (e.ctrlKey && e.key === 'p') { e.preventDefault(); window.print(); } });
             </script>
         </body>
         </html>
         `;
-
         printWindow.document.write(conteudoHTML);
         printWindow.document.close();
     };
@@ -438,13 +243,25 @@ const SorteioSimplesComponent = () => {
                     50% { transform: scale(1.17); background-color: #ffe8a1; }
                     100% { transform: scale(1); }
                 }
+                /* Layout responsivo para telefones */
+                .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+                .controls > button { flex: 0 1 auto; }
+                .page-title { font-size: 36px; margin-bottom: 12px; line-height: 1.05; }
+                @media (max-width: 600px) {
+                    .page-title { font-size: 28px; }
+                    .controls { flex-direction: column; align-items: stretch; }
+                    .controls > button { width: 100% !important; margin-right: 0 !important; }
+                    .summary-box { grid-template-columns: 1fr !important; }
+                    .results-grid { grid-template-columns: repeat(1, 1fr) !important; }
+                    .modal-inner { width: 90% !important; }
+                }
                 `}
             </style>
 
-            <h1>🎲 Sistema de Sorteio Simples</h1>
+            <h1>🎲 Sorteio Garagem — Edifício Flor de Lis</h1>
 
             {/* Botões */}
-            <div style={{ marginBottom: '20px' }}>
+            <div className="controls" style={{ marginBottom: '20px' }}>
                 <button
                     onClick={executarSorteio}
                     disabled={loading}
@@ -598,7 +415,7 @@ const SorteioSimplesComponent = () => {
                     alignItems: 'center',
                     zIndex: 9999
                 }}>
-                    <div style={{
+                    <div className="modal-inner" style={{
                         backgroundColor: 'white',
                         padding: '30px',
                         borderRadius: '10px',
