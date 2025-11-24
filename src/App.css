@@ -1,8 +1,36 @@
 #root {
-  max-width: 1280px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 1rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+  #root {
+    max-width: 100%;
+    padding: 0.5rem;
+  }
+}
+
+/* Estilo adicional para componentes centralizados */
+.container-centralizado {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Melhorias visuais gerais */
+* {
+  box-sizing: border-box;
 }
 
 .logo {
@@ -11,9 +39,11 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -22,6 +52,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
