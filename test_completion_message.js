@@ -4,7 +4,7 @@
 
 import { LotteryOrchestrator } from './src/core/services/LotteryOrchestrator.js';
 import { ApartmentSelectionService } from './src/core/services/ApartmentSelectionService.js';
-import { ApartmentTypeDetectorService } from './src/core/services/ApartmentTypeDetectorService.js';
+import { ApartmentTypeService } from './src/core/services/ApartmentTypeService.js';
 import { SpotSelectionService } from './src/core/services/SpotSelectionService.js';
 import { SpotAssignmentService } from './src/core/services/SpotAssignmentService.js';
 import { Garage } from './src/core/models/Garage.js';
@@ -36,7 +36,7 @@ const garage = new Garage(spots, {});
 
 // Criar orquestrador
 const apartmentSelector = new ApartmentSelectionService();
-const typeDetector = new ApartmentTypeDetectorService();
+const typeDetector = new ApartmentTypeService();
 const spotSelector = new SpotSelectionService();
 const spotAssigner = new SpotAssignmentService();
 
