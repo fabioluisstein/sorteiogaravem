@@ -2,48 +2,114 @@ import React, { useState } from 'react';
 import { SorteioSimples } from '../SorteioSimples.js';
 
 const SorteioSimplesComponent = () => {
+
+    // ESTADOS NORMAIS
     const [sorteio] = useState(() => new SorteioSimples());
     const [resultado, setResultado] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const executarSorteio = () => {
-        setLoading(true);
+    // ESTADOS DO PROCESSO SIMULADO
+    const [showModal, setShowModal] = useState(false);
+    const [progressoTexto, setProgressoTexto] = useState('');
+    const [progressoPercentual, setProgressoPercentual] = useState(0);
+    const [listaSorteio, setListaSorteio] = useState([]);
+    const [indiceAtual, setIndiceAtual] = useState(0);
+    const [processando, setProcessando] = useState(false);
+    const [resultadoFinalTemp, setResultadoFinalTemp] = useState(null);
 
-        // Resetar antes de novo sorteio
-        sorteio.resetar();
-
-        setTimeout(() => {
-            const novoResultado = sorteio.sorteio();
-            setResultado(novoResultado);
-            setLoading(false);
-        }, 100);
+    // EMBARALHAR ORDEM DOS APARTAMENTOS
+    const embaralhar = (array) => {
+        let a = [...array];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
     };
 
+    // Delay rápido
+    const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+    // EXECUTAR SORTEIO
+    const executarSorteio = () => {
+        setLoading(true);
+        sorteio.resetar();
+
+        // Sorteio real (instantâneo)
+        const resultadoReal = sorteio.sorteio();
+
+        // 🔥 Embaralha ordem de apresentação na modal
+        const ordemRandomica = embaralhar(resultadoReal.resultados);
+
+        setListaSorteio(ordemRandomica);
+        setResultadoFinalTemp(resultadoReal);
+
+        // Configura modal inicial
+        setIndiceAtual(0);
+        setProgressoPercentual(0);
+        setProgressoTexto("Pronto para iniciar!");
+        setShowModal(true);
+        setProcessando(false);
+
+        // Não mostrar resultados ainda
+        setResultado(null);
+    };
+
+    // PROCESSAR PRÓXIMO APARTAMENTO (somente quando clicar)
+    const processarProximo = async () => {
+        if (processando) return;
+
+        setProcessando(true);
+        setProgressoTexto("Sorteando...");
+
+        const item = listaSorteio[indiceAtual];
+        const delayMs = Math.floor(Math.random() * 1500) + 1500; // 1500–3000 ms
+
+        await delay(delayMs);
+
+        setProgressoTexto(
+            `Apto ${item.apartamento} → vaga(s): ${item.vagas.join(', ')}`
+        );
+
+        const pct = Math.round(((indiceAtual + 1) / listaSorteio.length) * 100);
+        setProgressoPercentual(pct);
+
+        setProcessando(false);
+
+        // Último apartamento → não avança
+        if (indiceAtual + 1 === listaSorteio.length) {
+            return;
+        }
+
+
+        // Avança para o próximo
+        setIndiceAtual(indiceAtual + 1);
+    };
+
+    // RESETAR
     const resetarSorteio = () => {
         sorteio.resetar();
         setResultado(null);
     };
 
+    // PDF com layout profissional otimizado para impressão
     const gerarPDF = () => {
         if (!resultado || !resultado.sucesso) {
             alert('❌ Erro: Execute um sorteio primeiro antes de imprimir!');
             return;
         }
 
-        // Criar uma nova janela para impressão
         const printWindow = window.open('', '_blank');
 
-        // Obter data e hora atual
         const agora = new Date();
         const dataFormatada = agora.toLocaleDateString('pt-BR');
         const horaFormatada = agora.toLocaleTimeString('pt-BR');
 
-        // Separar resultados por tipo
+        // Separar e organizar resultados
         const duplos = resultado.resultados.filter(r => r.tipo === 'duplo').sort((a, b) => a.apartamento - b.apartamento);
         const estendidos = resultado.resultados.filter(r => r.tipo === 'estendido').sort((a, b) => a.apartamento - b.apartamento);
         const simples = resultado.resultados.filter(r => r.tipo === 'simples').sort((a, b) => a.apartamento - b.apartamento);
 
-        // Conteúdo HTML para impressão
         const conteudoHTML = `
         <!DOCTYPE html>
         <html lang="pt-BR">
@@ -52,96 +118,204 @@ const SorteioSimplesComponent = () => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Resultado do Sorteio de Garagens - Flor de Lis</title>
             <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 20px;
-                    line-height: 1.6;
-                    color: #333;
+                @page {
+                    size: A4;
+                    margin: 1.5cm;
                 }
+                
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    line-height: 1.4;
+                    color: #2c3e50;
+                    font-size: 12px;
+                }
+                
                 .header {
                     text-align: center;
-                    border-bottom: 2px solid #333;
-                    padding-bottom: 20px;
-                    margin-bottom: 30px;
-                }
-                .header h1 {
-                    color: #2c3e50;
-                    margin: 0 0 10px 0;
-                    font-size: 24px;
-                }
-                .header .subtitle {
-                    color: #7f8c8d;
-                    font-size: 16px;
-                }
-                .info-box {
-                    background-color: #f8f9fa;
-                    border: 1px solid #dee2e6;
-                    border-radius: 5px;
-                    padding: 15px;
+                    border-bottom: 3px solid #3498db;
+                    padding-bottom: 15px;
                     margin-bottom: 25px;
                 }
-                .info-grid {
+                
+                .header h1 {
+                    font-size: 22px;
+                    color: #2c3e50;
+                    margin-bottom: 8px;
+                    font-weight: 700;
+                }
+                
+                .header .subtitle {
+                    font-size: 16px;
+                    color: #34495e;
+                    font-weight: 600;
+                }
+                
+                .header .datetime {
+                    font-size: 14px;
+                    color: #7f8c8d;
+                    margin-top: 8px;
+                }
+                
+                .summary-box {
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-bottom: 25px;
                     display: grid;
                     grid-template-columns: 1fr 1fr;
-                    gap: 15px;
+                    gap: 20px;
                 }
+                
+                .summary-item {
+                    font-size: 11px;
+                }
+                
+                .summary-item strong {
+                    color: #2c3e50;
+                    font-size: 12px;
+                }
+                
                 .section {
-                    margin-bottom: 30px;
+                    margin-bottom: 25px;
                     page-break-inside: avoid;
                 }
-                .section-title {
-                    background-color: #34495e;
+                
+                .section-header {
+                    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
                     color: white;
                     padding: 10px 15px;
-                    margin: 0 0 15px 0;
-                    border-radius: 5px;
-                    font-size: 18px;
-                    font-weight: bold;
+                    border-radius: 6px;
+                    margin-bottom: 12px;
+                    font-weight: 600;
+                    font-size: 14px;
+                    text-align: center;
                 }
-                .duplos { background-color: #f39c12; }
-                .estendidos { background-color: #27ae60; }
-                .simples { background-color: #3498db; }
+                
+                .section-header.duplos {
+                    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+                }
+                
+                .section-header.estendidos {
+                    background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+                }
+                
+                .section-header.simples {
+                    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+                }
                 
                 .results-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    gap: 10px;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 8px;
                 }
+                
                 .result-item {
-                    background-color: #ffffff;
+                    background: #ffffff;
                     border: 1px solid #bdc3c7;
                     border-radius: 5px;
-                    padding: 12px;
+                    padding: 10px;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    min-height: 40px;
+                    transition: all 0.2s ease;
                 }
+                
+                .result-item:hover {
+                    background: #f8f9fa;
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                
                 .apartment {
-                    font-weight: bold;
-                    font-size: 16px;
+                    font-weight: 700;
+                    font-size: 13px;
                     color: #2c3e50;
                 }
+                
                 .spots {
-                    color: #7f8c8d;
-                    font-size: 14px;
+                    color: #34495e;
+                    font-size: 12px;
+                    font-weight: 500;
                 }
+                
                 .pair-info {
-                    color: #e67e22;
-                    font-size: 12px;
-                    font-style: italic;
-                }
-                .footer {
-                    margin-top: 40px;
-                    text-align: center;
-                    border-top: 1px solid #bdc3c7;
-                    padding-top: 20px;
+                    font-size: 9px;
                     color: #7f8c8d;
-                    font-size: 12px;
+                    font-style: italic;
+                    text-align: right;
+                    line-height: 1.2;
                 }
+                
+                .footer {
+                    margin-top: 30px;
+                    text-align: center;
+                    border-top: 2px solid #ecf0f1;
+                    padding-top: 15px;
+                    font-size: 10px;
+                    color: #7f8c8d;
+                }
+                
+                .print-controls {
+                    text-align: center;
+                    margin: 20px 0;
+                    padding: 15px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                }
+                
+                .print-btn {
+                    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+                    color: white;
+                    padding: 12px 30px;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    margin: 5px;
+                    transition: all 0.2s ease;
+                }
+                
+                .print-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+                }
+                
+                .close-btn {
+                    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+                }
+                
                 @media print {
-                    body { margin: 15px; }
-                    .no-print { display: none; }
-                    .section { page-break-inside: avoid; }
+                    .print-controls {
+                        display: none !important;
+                    }
+                    
+                    body {
+                        font-size: 11px;
+                    }
+                    
+                    .section {
+                        page-break-inside: avoid;
+                        margin-bottom: 20px;
+                    }
+                    
+                    .results-grid {
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 6px;
+                    }
+                    
+                    .result-item {
+                        min-height: 35px;
+                        padding: 8px;
+                    }
                 }
             </style>
         </head>
@@ -149,43 +323,50 @@ const SorteioSimplesComponent = () => {
             <div class="header">
                 <h1>🏢 RESULTADO DO SORTEIO DE GARAGENS</h1>
                 <div class="subtitle">Condomínio Flor de Lis</div>
-                <div class="subtitle">Data: ${dataFormatada} • Hora: ${horaFormatada}</div>
+                <div class="datetime">${dataFormatada} • ${horaFormatada}</div>
             </div>
 
-            <div class="info-box">
-                <div class="info-grid">
-                    <div>
-                        <strong>📊 Resumo do Sorteio:</strong><br>
-                        • Total de apartamentos: ${resultado.estatisticas.apartamentosSorteados}/28<br>
-                        • Total de vagas atribuídas: ${resultado.estatisticas.vagasAtribuidas || duplos.length * 2 + estendidos.length + simples.length}/42<br>
-                        • Vagas livres: ${resultado.estatisticas.vagasLivres}
-                    </div>
-                    <div>
-                        <strong>🎯 Distribuição por Tipo:</strong><br>
-                        • Apartamentos — Vagas Duplas: ${duplos.length}/14<br>
-                        • Apartamentos — Vagas Duplas (Estendidas): ${estendidos.length}/4<br>
-                        • Apartamentos — Vaga Simples: ${simples.length}/10
-                    </div>
+            <div class="summary-box">
+                <div class="summary-item">
+                    <strong>📊 Resumo do Sorteio:</strong><br>
+                    • Total de apartamentos: ${resultado.estatisticas.apartamentos}/${resultado.estatisticas.apartamentos}<br>
+                    • Total de vagas atribuídas: ${resultado.estatisticas.vagasOcupadas}/${sorteio.vagas.length}<br>
+                    • Vagas livres: ${resultado.estatisticas.vagasLivres}
+                </div>
+                <div class="summary-item">
+                    <strong>🎯 Distribuição por Tipo:</strong><br>
+                    • Apartamentos — Vagas Duplas: ${duplos.length}/${duplos.length}<br>
+                    • Apartamentos — Vagas Duplas (Estendidas): ${estendidos.length}/${estendidos.length}<br>
+                    • Apartamentos — Vaga Simples: ${simples.length}/${simples.length}
                 </div>
             </div>
 
             <div class="section">
-                <h2 class="section-title duplos">🏢 Apartamentos — Vagas Duplas (${duplos.length})</h2>
+                <div class="section-header duplos">
+                    🏢 APARTAMENTOS — VAGAS DUPLAS (${duplos.length})
+                </div>
                 <div class="results-grid">
-                    ${duplos.map(item => `
-                        <div class="result-item">
-                            <span class="apartment">Apto ${item.apartamento}</span>
-                            <div style="text-align: right;">
-                                <div class="spots">Vagas ${item.vagas.join(', ')}</div>
-                                ${item.par ? `<div class="pair-info">${item.par}</div>` : ''}
+                    ${duplos.map(item => {
+            const par = sorteio.pares.find(p =>
+                p.vagas.includes(item.vagas[0]) && p.vagas.includes(item.vagas[1])
+            );
+            return `
+                            <div class="result-item">
+                                <span class="apartment">Apto ${item.apartamento}</span>
+                                <div style="text-align: right;">
+                                    <div class="spots">Vagas ${item.vagas.join(', ')}</div>
+                                    <div class="pair-info">${par ? par.id : 'Par não identificado'}</div>
+                                </div>
                             </div>
-                        </div>
-                    `).join('')}
+                        `;
+        }).join('')}
                 </div>
             </div>
 
             <div class="section">
-                <h2 class="section-title estendidos">🏗️ Apartamentos — Vagas Duplas (Estendidas) (${estendidos.length})</h2>
+                <div class="section-header estendidos">
+                    🏗️ APARTAMENTOS — VAGAS DUPLAS (ESTENDIDAS) (${estendidos.length})
+                </div>
                 <div class="results-grid">
                     ${estendidos.map(item => `
                         <div class="result-item">
@@ -197,7 +378,9 @@ const SorteioSimplesComponent = () => {
             </div>
 
             <div class="section">
-                <h2 class="section-title simples">🏠 Apartamentos — Vaga Simples (${simples.length})</h2>
+                <div class="section-header simples">
+                    🏠 APARTAMENTOS — VAGA SIMPLES (${simples.length})
+                </div>
                 <div class="results-grid">
                     ${simples.map(item => `
                         <div class="result-item">
@@ -209,44 +392,58 @@ const SorteioSimplesComponent = () => {
             </div>
 
             <div class="footer">
-                <p>Documento gerado automaticamente pelo Sistema de Sorteio Simples</p>
-                <p>Flor de Lis • ${dataFormatada} ${horaFormatada}</p>
+                <p><strong>Documento gerado automaticamente pelo Sistema de Sorteio Simples</strong></p>
+                <p>Condomínio Flor de Lis • ${dataFormatada} ${horaFormatada}</p>
             </div>
 
-            <div class="no-print" style="margin-top: 30px; text-align: center;">
-                <button onclick="window.print()" style="
-                    padding: 15px 30px;
-                    font-size: 16px;
-                    background-color: #3498db;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    margin-right: 10px;
-                ">🖨️ Imprimir / Salvar PDF</button>
-                
-                <button onclick="window.close()" style="
-                    padding: 15px 30px;
-                    font-size: 16px;
-                    background-color: #95a5a6;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                ">❌ Fechar</button>
+            <div class="print-controls">
+                <button class="print-btn" onclick="window.print()">
+                    🖨️ Imprimir / Salvar PDF
+                </button>
+                <button class="print-btn close-btn" onclick="window.close()">
+                    ❌ Fechar
+                </button>
             </div>
+
+            <script>
+                // Foco automático no botão de impressão
+                window.onload = function() {
+                    document.querySelector('.print-btn').focus();
+                };
+                
+                // Atalho de teclado Ctrl+P
+                document.addEventListener('keydown', function(e) {
+                    if (e.ctrlKey && e.key === 'p') {
+                        e.preventDefault();
+                        window.print();
+                    }
+                });
+            </script>
         </body>
-        </html>`;
+        </html>
+        `;
 
         printWindow.document.write(conteudoHTML);
         printWindow.document.close();
-        printWindow.focus();
     };
 
     return (
-        <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+
+            {/* ANIMAÇÃO GLOBAL */}
+            <style>
+                {`
+                @keyframes pulse {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.17); background-color: #ffe8a1; }
+                    100% { transform: scale(1); }
+                }
+                `}
+            </style>
+
             <h1>🎲 Sistema de Sorteio Simples</h1>
 
+            {/* Botões */}
             <div style={{ marginBottom: '20px' }}>
                 <button
                     onClick={executarSorteio}
@@ -256,10 +453,9 @@ const SorteioSimplesComponent = () => {
                         fontSize: '16px',
                         backgroundColor: '#4CAF50',
                         color: 'white',
-                        border: 'none',
                         borderRadius: '5px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        marginRight: '10px'
+                        marginRight: '10px',
+                        cursor: loading ? 'not-allowed' : 'pointer'
                     }}
                 >
                     {loading ? 'Sorteando...' : '🎲 Executar Sorteio'}
@@ -273,10 +469,9 @@ const SorteioSimplesComponent = () => {
                         fontSize: '16px',
                         backgroundColor: '#f44336',
                         color: 'white',
-                        border: 'none',
                         borderRadius: '5px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        marginRight: '10px'
+                        marginRight: '10px',
+                        cursor: loading ? 'not-allowed' : 'pointer'
                     }}
                 >
                     🔄 Resetar
@@ -284,130 +479,71 @@ const SorteioSimplesComponent = () => {
 
                 <button
                     onClick={gerarPDF}
-                    disabled={loading || !resultado || !resultado.sucesso}
+                    disabled={!resultado || !resultado.sucesso || loading}
                     style={{
                         padding: '12px 24px',
                         fontSize: '16px',
-                        backgroundColor: resultado && resultado.sucesso ? '#2196F3' : '#cccccc',
+                        backgroundColor: resultado && resultado.sucesso ? '#2196F3' : '#aaa',
                         color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: (loading || !resultado || !resultado.sucesso) ? 'not-allowed' : 'pointer'
+                        borderRadius: '5px'
                     }}
                 >
                     🖨️ Imprimir PDF
                 </button>
             </div>
 
+            {/* -------- RESULTADO FINAL ORIGINAL (SEM ALTERAÇÕES) -------- */}
             {resultado && (
                 <div>
                     {resultado.sucesso ? (
                         <div>
-                            {/* Estatísticas */}
+
                             <div style={{
                                 backgroundColor: '#e8f5e8',
                                 padding: '15px',
                                 borderRadius: '5px',
-                                marginBottom: '20px',
-                                border: '1px solid #4CAF50'
+                                border: '1px solid #4CAF50',
+                                marginBottom: '20px'
                             }}>
                                 <h3>📊 Estatísticas do Sorteio</h3>
-                                <p>✅ <strong>Vagas Ocupadas:</strong> {resultado.estatisticas.vagasOcupadas}/42</p>
-                                <p>🏠 <strong>Apartamentos Sorteados:</strong> {resultado.estatisticas.apartamentosSorteados}/28</p>
-                                <p>🅿️ <strong>Vagas Livres:</strong> {resultado.estatisticas.vagasLivres}</p>
+                                <p><strong>Vagas Ocupadas:</strong> {resultado.estatisticas.vagasOcupadas}/42</p>
+                                <p><strong>Apartamentos Sorteados:</strong> {resultado.estatisticas.apartamentosSorteados}/28</p>
+                                <p><strong>Vagas Livres:</strong> {resultado.estatisticas.vagasLivres}</p>
                             </div>
 
-                            {/* Resultados por Tipo */}
-                            <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-                                {/* Duplos */}
-                                <div style={{
-                                    backgroundColor: '#fff3cd',
-                                    padding: '15px',
-                                    borderRadius: '5px',
-                                    border: '1px solid #ffc107',
-                                    flex: 1
-                                }}>
-                                    <h4>🏢 Apartamentos — Vagas Duplas</h4>
-                                    {resultado.resultados
-                                        .filter(r => r.tipo === 'duplo')
+                            <div style={{ display: 'flex', gap: '20px' }}>
+
+                                <div style={{ flex: 1 }}>
+                                    <h4>🏢 Duplos</h4>
+                                    {resultado.resultados.filter(r => r.tipo === 'duplo')
                                         .map(r => (
-                                            <p key={r.apartamento} style={{ margin: '5px 0', fontSize: '14px' }}>
-                                                <strong>Apto {r.apartamento}:</strong> Vagas {r.vagas.join(', ')} ({r.par})
+                                            <p key={r.apartamento}>
+                                                <strong>Apto {r.apartamento}:</strong> {r.vagas.join(', ')}
                                             </p>
                                         ))}
                                 </div>
 
-                                {/* Estendidos */}
-                                <div style={{
-                                    backgroundColor: '#d4edda',
-                                    padding: '15px',
-                                    borderRadius: '5px',
-                                    border: '1px solid #28a745',
-                                    flex: 1
-                                }}>
-                                    <h4>🏗️ Apartamentos — Vagas Duplas (Estendidas)</h4>
-                                    {resultado.resultados
-                                        .filter(r => r.tipo === 'estendido')
+                                <div style={{ flex: 1 }}>
+                                    <h4>🏗️ Estendidos</h4>
+                                    {resultado.resultados.filter(r => r.tipo === 'estendido')
                                         .map(r => (
-                                            <p key={r.apartamento} style={{ margin: '5px 0', fontSize: '14px' }}>
-                                                <strong>Apto {r.apartamento}:</strong> Vaga {r.vagas[0]}
+                                            <p key={r.apartamento}>
+                                                <strong>Apto {r.apartamento}:</strong> {r.vagas[0]}
                                             </p>
                                         ))}
                                 </div>
 
-                                {/* Simples */}
-                                <div style={{
-                                    backgroundColor: '#d1ecf1',
-                                    padding: '15px',
-                                    borderRadius: '5px',
-                                    border: '1px solid #17a2b8',
-                                    flex: 1
-                                }}>
-                                    <h4>🏠 Apartamentos — Vaga Simples</h4>
-                                    {resultado.resultados
-                                        .filter(r => r.tipo === 'simples')
+                                <div style={{ flex: 1 }}>
+                                    <h4>🏠 Simples</h4>
+                                    {resultado.resultados.filter(r => r.tipo === 'simples')
                                         .map(r => (
-                                            <p key={r.apartamento} style={{ margin: '5px 0', fontSize: '14px' }}>
-                                                <strong>Apto {r.apartamento}:</strong> Vaga {r.vagas[0]}
+                                            <p key={r.apartamento}>
+                                                <strong>Apto {r.apartamento}:</strong> {r.vagas[0]}
                                             </p>
                                         ))}
                                 </div>
                             </div>
 
-                            {/* Resumo por Andar */}
-                            <div style={{
-                                backgroundColor: '#f8f9fa',
-                                padding: '15px',
-                                borderRadius: '5px',
-                                border: '1px solid #dee2e6'
-                            }}>
-                                <h4>🏬 Ocupação por Andar de Garagem</h4>
-                                <div style={{ display: 'flex', gap: '20px' }}>
-                                    <div>
-                                        <strong>G1:</strong>
-                                        <p style={{ margin: '5px 0', fontSize: '14px' }}>
-                                            Vagas 1-14 |
-                                            Ocupadas: {sorteio.vagas.filter(v => v.andar === 'G1' && v.ocupada).length}/14
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <strong>G2:</strong>
-                                        <p style={{ margin: '5px 0', fontSize: '14px' }}>
-                                            Vagas 15-28 |
-                                            Ocupadas: {sorteio.vagas.filter(v => v.andar === 'G2' && v.ocupada).length}/14
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <strong>G3:</strong>
-                                        <p style={{ margin: '5px 0', fontSize: '14px' }}>
-                                            Vagas 29-42 |
-                                            Ocupadas: {sorteio.vagas.filter(v => v.andar === 'G3' && v.ocupada).length}/14
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Lista de Vagas Livres */}
                             {resultado.estatisticas.vagasLivres > 0 && (
                                 <div style={{
                                     backgroundColor: '#f8d7da',
@@ -416,13 +552,8 @@ const SorteioSimplesComponent = () => {
                                     border: '1px solid #dc3545',
                                     marginTop: '20px'
                                 }}>
-                                    <h4>🚫 Vagas Não Ocupadas</h4>
-                                    <p style={{ fontSize: '14px' }}>
-                                        Vagas livres: {sorteio.vagas
-                                            .filter(v => !v.ocupada)
-                                            .map(v => v.id)
-                                            .join(', ')}
-                                    </p>
+                                    <h4>🚫 Vagas Livres</h4>
+                                    <p>{sorteio.vagas.filter(v => !v.ocupada).map(v => v.id).join(', ')}</p>
                                 </div>
                             )}
 
@@ -450,14 +581,104 @@ const SorteioSimplesComponent = () => {
                     color: '#6c757d'
                 }}>
                     <h3>🎯 Clique em "Executar Sorteio" para começar!</h3>
-                    <p>Sistema com 28 apartamentos e 42 vagas de garagem</p>
-                    <ul style={{ textAlign: 'left', maxWidth: '300px', margin: '0 auto' }}>
-                        <li>14 apartamentos — vagas duplas (2 vagas cada)</li>
-                        <li>4 apartamentos — vagas duplas estendidas (1 vaga estendida)</li>
-                        <li>10 apartamentos — vaga simples (1 vaga normal)</li>
-                    </ul>
+                    <p>28 apartamentos • 42 vagas</p>
                 </div>
             )}
+
+            {/* -------- MODAL -------- */}
+            {showModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{
+                        backgroundColor: 'white',
+                        padding: '30px',
+                        borderRadius: '10px',
+                        width: '420px',
+                        textAlign: 'center',
+                        boxShadow: '0 0 20px rgba(0,0,0,0.3)'
+                    }}>
+                        <h3>⏳ Sorteio de Garagens</h3>
+
+                        <img
+                            src="https://i.gifer.com/ZZ5H.gif"
+                            alt="loading"
+                            style={{ width: '80px', margin: '20px auto' }}
+                        />
+
+                        <p
+                            style={{
+                                fontSize: '20px',
+                                marginBottom: '15px',
+                                padding: '10px',
+                                borderRadius: '8px',
+                                backgroundColor: progressoTexto.includes("Apto") ? '#fff7d6' : '#eee',
+                                border: progressoTexto.includes("Apto") ? '2px solid #ffcc00' : '1px solid #ccc',
+                                fontWeight: 'bold',
+                                color: '#333',
+                                animation: progressoTexto.includes("Apto") ? 'pulse 0.6s ease-in-out 3' : 'none'
+                            }}
+                        >
+                            {progressoTexto}
+                        </p>
+
+                        <div style={{
+                            width: '100%',
+                            height: '15px',
+                            backgroundColor: '#eee',
+                            borderRadius: '8px',
+                            overflow: 'hidden'
+                        }}>
+                            <div style={{
+                                width: `${progressoPercentual}%`,
+                                height: '100%',
+                                backgroundColor: '#4CAF50',
+                                transition: 'width 0.3s'
+                            }} />
+                        </div>
+
+                        <p style={{ marginTop: '10px', fontSize: '14px' }}>
+                            {progressoPercentual}% concluído
+                        </p>
+
+                        <button
+                            onClick={
+                                indiceAtual + 1 === listaSorteio.length
+                                    ? () => {
+                                        // 🔥 Só aqui finaliza tudo
+                                        setShowModal(false);
+                                        setLoading(false);
+                                        setResultado(resultadoFinalTemp);
+                                    }
+                                    : processarProximo
+                            }
+
+                            disabled={processando}
+                            style={{
+                                marginTop: '20px',
+                                padding: '12px 28px',
+                                fontSize: '16px',
+                                backgroundColor: processando ? '#aaa' : '#2196F3',
+                                color: 'white',
+                                borderRadius: '5px',
+                                cursor: processando ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            {indiceAtual + 1 === listaSorteio.length ? "Finalizar" : "Próximo →"}
+                        </button>
+
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
