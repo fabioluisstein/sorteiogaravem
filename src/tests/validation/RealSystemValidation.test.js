@@ -1,6 +1,6 @@
 /**
  * @fileoverview Teste de validação do sistema real
- * @description Valida se apartamentos estendidos (303, 403, 503, 603, 703) são detectados corretamente
+ * @description Valida se apartamentos estendidos (403, 503, 603, 703) são detectados corretamente
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
@@ -11,7 +11,7 @@ import { Garage, Spot } from '../../core/index.js';
 describe('🔍 VALIDAÇÃO: Sistema Real - Apartamentos Estendidos', () => {
     let lotterySystem;
 
-    const apartamentosEstendidos = [303, 403, 503, 603, 703];
+    const apartamentosEstendidos = [403, 503, 603, 703];
 
     const isVagaEstendida = (vagaId) => {
         return [7, 8, 21, 22, 35, 36].includes(vagaId); // Vagas estendidas padrão

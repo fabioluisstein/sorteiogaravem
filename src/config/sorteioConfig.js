@@ -13,7 +13,7 @@ export class ConfigReader {
       vagas_estendidas: [7, 8, 21, 22, 35, 36],
       vagas_proibidas_duplo: [7, 8, 21, 22, 35, 36], // 🎯 NOVO: Vagas proibidas para pares duplos
       apartamentos_vagas_duplas: [101, 102, 103, 104, 203, 301, 304, 402, 404, 501, 502, 604, 701, 702],
-      apartamentos_vagas_estendidas: [303, 403, 503, 603, 703],
+      apartamentos_vagas_estendidas: [403, 503, 603, 703],
       total_vagas: 42,
       vagas_por_andar: 14,
       vagas_por_lado: 7,

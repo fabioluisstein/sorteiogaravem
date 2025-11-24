@@ -25,8 +25,8 @@ describe('🐛 CENÁRIO BUG: Vaga não está livre no primeiro sorteio', () => {
 
         // Apartamentos duplos: [101, 102, 103, 104, 203, 301, 304, 402, 404, 501, 502, 604, 701, 702]
         const duplos = [101, 102, 103, 104, 203, 301, 304, 402, 404, 501, 502, 604, 701, 702];
-        // Apartamentos estendidos: [303, 403, 503, 603, 703]
-        const estendidos = [303, 403, 503, 603, 703];
+        // Apartamentos estendidos: [403, 503, 603, 703]
+        const estendidos = [403, 503, 603, 703];
 
         // Criar todos os apartamentos de 1-7 andares, 4 por andar
         for (let andar = 1; andar <= 7; andar++) {

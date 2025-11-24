@@ -27,7 +27,7 @@ describe('🎯 Sorteio Completo de Garagens - Edifício Flor de Lis', () => {
 
     const APARTAMENTOS_DUPLOS = [101, 102, 103, 104, 203, 301, 304, 402, 404, 501, 502, 604, 701, 702];
 
-    const APARTAMENTOS_ESTENDIDOS = [303, 403, 503, 603, 703];
+    const APARTAMENTOS_ESTENDIDOS = [403, 503, 603, 703];
 
     // Pares fisicamente válidos (baseado na estrutura do edifício)
     const PARES_VALIDOS = [

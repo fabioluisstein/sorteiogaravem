@@ -122,7 +122,7 @@ export class LotterySystemFactory {
     static createBasicSystem() {
         return this.createSystem({
             seed: 12345,
-            isExtendedApartmentFn: (id) => [303, 403, 503, 603, 703].includes(id),
+            isExtendedApartmentFn: (id) => [403, 503, 603, 703].includes(id),
             isExtendedSpotFn: (id) => [7, 8, 21, 22, 35, 36].includes(id)
         });
     }
