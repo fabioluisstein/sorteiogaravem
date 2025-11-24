@@ -95,8 +95,10 @@ export class SorteioSimples {
     criarApartamentos() {
         const apartamentos = [];
 
-        // 14 apartamentos duplos (201-214)
-        for (let i = 201; i <= 214; i++) {
+        // 14 apartamentos duplos (ids extraídos da imagem)
+        const duplosIds = [101, 102, 103, 104, 203, 301, 304, 402, 404, 501, 502, 604, 701, 702];
+        for (let idx = 0; idx < duplosIds.length; idx++) {
+            const i = duplosIds[idx];
             apartamentos.push({
                 id: i,
                 tipo: 'duplo',
@@ -105,8 +107,10 @@ export class SorteioSimples {
             });
         }
 
-        // 4 apartamentos estendidos (301-304) 
-        for (let i = 301; i <= 304; i++) {
+        // 4 apartamentos estendidos (ids específicos)
+        const estendidosIds = [603, 204, 704, 303];
+        for (let idx = 0; idx < estendidosIds.length; idx++) {
+            const i = estendidosIds[idx];
             apartamentos.push({
                 id: i,
                 tipo: 'estendido',
@@ -115,8 +119,10 @@ export class SorteioSimples {
             });
         }
 
-        // 10 apartamentos simples (101-110)
-        for (let i = 101; i <= 110; i++) {
+        // 10 apartamentos simples (ids específicos)
+        const simplesIds = [201, 202, 302, 401, 403, 503, 504, 601, 602, 703];
+        for (let idx = 0; idx < simplesIds.length; idx++) {
+            const i = simplesIds[idx];
             apartamentos.push({
                 id: i,
                 tipo: 'simples',
