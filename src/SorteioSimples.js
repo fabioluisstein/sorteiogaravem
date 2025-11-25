@@ -2,6 +2,10 @@
  * Sistema de Sorteio Simples - Sem SOLID, direto ao ponto
  */
 
+// Conjunto permitido de escolhas para a "vaga VIP" (usado tanto para
+// escolher uma vagaVip global quanto — agora — como pool para o apto 303)
+const VIP_CHOICES = [3, 4, 5, 6, 9, 10, 11, 12, 13, 14];
+
 export class SorteioSimples {
     constructor() {
         this.vagas = this.criarVagas();
@@ -16,7 +20,15 @@ export class SorteioSimples {
      * G1, G2 e G3 - cada andar com 14 vagas
      * Vagas estendidas: 7, 8, 21, 22, 35, 36 (não podem formar pares)
      */
+    // G3: vagas 29-42
     criarVagas() {
+        // Vaga VIP: escolha aleatória entre o conjunto permitido
+        const vagaVip = VIP_CHOICES[Math.floor(Math.random() * VIP_CHOICES.length)];
+        this.vagaVip = vagaVip; // expor no objeto para uso externo
+        this.variagam = vagaVip; // variável solicitada com o valor de vagaVip
+
+        console.log(`🔔 vagaVip selecionada: ${vagaVip}`);
+
         const vagas = [];
 
         // G1: vagas 1-14
@@ -26,18 +38,20 @@ export class SorteioSimples {
                 andar: 'G1',
                 ocupada: false,
                 apartamento: null,
-                estendida: [7, 8].includes(i) // Vagas estendidas G1
+                estendida: [7, 8].includes(i), // Vagas estendidas G1
+                vip: i === vagaVip
             });
         }
 
-        // G2: vagas 15-28  
+        // G2: vagas 15-28
         for (let i = 15; i <= 28; i++) {
             vagas.push({
                 id: i,
                 andar: 'G2',
                 ocupada: false,
                 apartamento: null,
-                estendida: [21, 22].includes(i) // Vagas estendidas G2
+                estendida: [21, 22].includes(i), // Vagas estendidas G2
+                vip: i === vagaVip
             });
         }
 
@@ -48,10 +62,12 @@ export class SorteioSimples {
                 andar: 'G3',
                 ocupada: false,
                 apartamento: null,
-                estendida: [35, 36].includes(i) // Vagas estendidas G3
+                estendida: [35, 36].includes(i), // Vagas estendidas G3
+                vip: i === vagaVip
             });
         }
 
+        console.log('🔎 Vagas criadas (ids):', vagas.map(v => v.id).join(', '));
         return vagas;
     }
 
@@ -85,6 +101,12 @@ export class SorteioSimples {
             { id: 'G3-39-40', vagaA: 39, vagaB: 40 },
             { id: 'G3-41-42', vagaA: 41, vagaB: 42 }
         ];
+
+        // Se houver uma vaga VIP definida, remover quaisquer pares que contenham essa vaga
+        // para evitar que a vaga VIP faça parte de um par.
+        if (typeof this.vagaVip !== 'undefined' && this.vagaVip !== null) {
+            return paresOficiais.filter(p => p.vagaA !== this.vagaVip && p.vagaB !== this.vagaVip);
+        }
 
         return paresOficiais;
     }
@@ -139,11 +161,13 @@ export class SorteioSimples {
      */
     reservarParesDuplos() {
         console.log('🎯 Reservando pares para apartamentos duplos...');
+        console.log('   📌 pares totais definidos:', this.pares.map(p => p.id).join(', '));
         const paresLivres = this.pares.filter(par => {
             const vagaA = this.vagas.find(v => v.id === par.vagaA);
             const vagaB = this.vagas.find(v => v.id === par.vagaB);
             return !vagaA.ocupada && !vagaB.ocupada && !vagaA.estendida && !vagaB.estendida;
         });
+        console.log('   🔎 pares livres (não estendidos, não ocupados):', paresLivres.map(p => p.id).join(', '));
 
         // Seleção por blocos conforme solicitado:
         //  - 4 pares entre vagas 1-14 (G1)
@@ -171,11 +195,16 @@ export class SorteioSimples {
             return a.slice(0, n);
         };
 
+        const escolhidosG1 = pickRandom(paresG1, needG1);
+        const escolhidosG2 = pickRandom(paresG2, needG2);
+        const escolhidosG3 = pickRandom(paresG3, needG3);
         const selecionados = [
-            ...pickRandom(paresG1, needG1),
-            ...pickRandom(paresG2, needG2),
-            ...pickRandom(paresG3, needG3)
+            ...escolhidosG1,
+            ...escolhidosG2,
+            ...escolhidosG3
         ];
+
+        console.log(`   🧾 Pares selecionados G1:${escolhidosG1.map(p => p.id).join(', ')} | G2:${escolhidosG2.map(p => p.id).join(', ')} | G3:${escolhidosG3.map(p => p.id).join(', ')}`);
 
         // Marcar reservas
         for (const par of selecionados) {
@@ -214,6 +243,20 @@ export class SorteioSimples {
             if (vaga.estendida) {
                 console.log(`✨ Vaga ESTENDIDA ${vaga.id} disponível para apartamentos simples`);
             }
+
+            // Log adicional: VIP detectado entre vagas
+            if (vaga.vip) {
+                console.log(`   🔔 VAGA VIP ${vaga.id} está atualmente livre (não ocupada)`);
+                // Verificar se está bloqueada por par reservado
+                for (const parId in this.reservasDuplos) {
+                    const par = this.pares.find(p => p.id === parId);
+                    if (par && (par.vagaA === vaga.id || par.vagaB === vaga.id)) {
+                        console.log(`      ⚠️ VIP ${vaga.id} está em par reservado ${parId} e será considerado bloqueado para simples`);
+                        return false;
+                    }
+                }
+            }
+
             return true;
         });
     }
@@ -248,6 +291,8 @@ export class SorteioSimples {
                 }
             }
         }
+
+        console.log('   🔎 Pares reservados disponíveis para duplos:', paresDisponiveis.map(p => p.id).join(', '));
 
         return paresDisponiveis;
     }
@@ -359,15 +404,46 @@ export class SorteioSimples {
             .sort((a, b) => a.id - b.id); // Ordem crescente: 101, 102, 103...
 
         for (const apto of apartamentosSimples) {
-            const vagasSimples = this.retornarVagasLivresSimples();
+            let vagasSimples = this.retornarVagasLivresSimples();
+
+            console.log(`   🔎 Apartamento ${apto.id} - vagasSimples disponíveis: ${vagasSimples.map(v => v.id).join(', ')}`);
 
             if (vagasSimples.length === 0) {
                 console.error(`❌ Sem vagas simples para apartamento ${apto.id}`);
                 continue;
             }
 
-            const vagaSorteada = this.sortearAleatorio(vagasSimples);
+            const vipId = this.vagaVip;
+            let vagaSorteada = null;
 
+            // Se for o apto 303, tentar reservar ALEATORIAMENTE uma vaga dentre
+            // as permitidas (VIP_CHOICES) — mas somente se estiver disponível
+            // no pool de vagas simples (ou seja: livre e não bloqueada por par).
+            if (apto.id === 303) {
+                const vipCandidates = VIP_CHOICES.filter(id => vagasSimples.some(v => v.id === id));
+                if (vipCandidates.length > 0) {
+                    const chosen = this.sortearAleatorio(vipCandidates);
+                    vagaSorteada = this.vagas.find(v => v.id === chosen);
+                    console.log(`   ⭐ Reservando Vaga VIP ${chosen} (escolha aleatória entre VIP_CHOICES) para apto 303`);
+                } else {
+                    console.log(`   ℹ️ Nenhuma vaga VIP candidata (${VIP_CHOICES.join(',')}) disponível para apto 303; usando pool normal`);
+                }
+            }
+
+            // Para os demais apartamentos simples, evitar escolher a vagaVip se possível
+            if (!vagaSorteada) {
+                let pool = vagasSimples;
+                if (typeof vipId !== 'undefined' && vipId !== null) {
+                    const withoutVip = vagasSimples.filter(v => v.id !== vipId);
+                    // se houver outras vagas além da VIP, use elas; caso contrário, permita a VIP
+                    pool = (withoutVip.length > 0 && apto.id !== 303) ? withoutVip : vagasSimples;
+                    if (apto.id !== 303) console.log(`   ℹ️ Apartamento ${apto.id} - evitando VIP ${vipId}, pool usado: ${pool.map(v => v.id).join(', ')}`);
+                }
+
+                vagaSorteada = this.sortearAleatorio(pool);
+            }
+
+            // Ocupar a vaga sorteada
             vagaSorteada.ocupada = true;
             vagaSorteada.apartamento = apto.id;
 
