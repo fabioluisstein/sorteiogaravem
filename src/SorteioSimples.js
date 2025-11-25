@@ -139,28 +139,53 @@ export class SorteioSimples {
      */
     reservarParesDuplos() {
         console.log('🎯 Reservando pares para apartamentos duplos...');
-
         const paresLivres = this.pares.filter(par => {
             const vagaA = this.vagas.find(v => v.id === par.vagaA);
             const vagaB = this.vagas.find(v => v.id === par.vagaB);
             return !vagaA.ocupada && !vagaB.ocupada && !vagaA.estendida && !vagaB.estendida;
         });
 
-        if (paresLivres.length < 14) {
-            console.error('❌ Não há pares suficientes para reservar!');
+        // Seleção por blocos conforme solicitado:
+        //  - 4 pares entre vagas 1-14 (G1)
+        //  - 5 pares entre vagas 15-28 (G2)
+        //  - 5 pares entre vagas 29-42 (G3)
+        const paresG1 = paresLivres.filter(p => p.vagaA >= 1 && p.vagaB <= 14);
+        const paresG2 = paresLivres.filter(p => p.vagaA >= 15 && p.vagaB <= 28);
+        const paresG3 = paresLivres.filter(p => p.vagaA >= 29 && p.vagaB <= 42);
+
+        const needG1 = 4, needG2 = 5, needG3 = 5;
+
+        if (paresG1.length < needG1 || paresG2.length < needG2 || paresG3.length < needG3) {
+            console.error('❌ Não há pares suficientes em um dos blocos para reservar (G1/G2/G3)');
+            console.error(`Disponíveis G1:${paresG1.length} / G2:${paresG2.length} / G3:${paresG3.length}`);
             return false;
         }
 
-        // Reservar os primeiros 14 pares
-        for (let i = 0; i < 14; i++) {
-            const par = paresLivres[i];
+        // Função utilitária: embaralha e retorna n itens
+        const pickRandom = (arr, n) => {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a.slice(0, n);
+        };
+
+        const selecionados = [
+            ...pickRandom(paresG1, needG1),
+            ...pickRandom(paresG2, needG2),
+            ...pickRandom(paresG3, needG3)
+        ];
+
+        // Marcar reservas
+        for (const par of selecionados) {
             this.reservasDuplos[par.id] = {
                 reservadoEm: new Date(),
                 usado: false
             };
         }
 
-        console.log(`✅ Reservados ${Object.keys(this.reservasDuplos).length} pares para duplos`);
+        console.log(`✅ Reservados ${Object.keys(this.reservasDuplos).length} pares para duplos (G1:${needG1}, G2:${needG2}, G3:${needG3})`);
         return true;
     }
 
@@ -212,6 +237,12 @@ export class SorteioSimples {
                 const vagaA = this.vagas.find(v => v.id === par.vagaA);
                 const vagaB = this.vagas.find(v => v.id === par.vagaB);
 
+                // Segurança extra: garantir que nenhuma das vagas do par seja estendida
+                if ((vagaA && vagaA.estendida) || (vagaB && vagaB.estendida)) {
+                    console.log(`🚫 Par ${par.id} contém vaga estendida; ignorando para duplos`);
+                    continue;
+                }
+
                 if (!vagaA.ocupada && !vagaB.ocupada) {
                     paresDisponiveis.push(par);
                 }
@@ -259,6 +290,14 @@ export class SorteioSimples {
             // Ocupar as vagas
             const vagaA = this.vagas.find(v => v.id === parSorteado.vagaA);
             const vagaB = this.vagas.find(v => v.id === parSorteado.vagaB);
+
+            // Segurança: garantir que não estejamos ocupando uma vaga estendida por engano
+            if ((vagaA && vagaA.estendida) || (vagaB && vagaB.estendida)) {
+                console.error(`❌ Par sorteado ${parSorteado.id} contém vaga estendida — pulando e tentando outro par.`);
+                // marcar par como usado para evitar loop infinito e continuar
+                this.reservasDuplos[parSorteado.id].usado = true;
+                continue;
+            }
 
             vagaA.ocupada = true;
             vagaA.apartamento = apto.id;
