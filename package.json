@@ -20,6 +20,8 @@
     "test:all": "npm run test:basic && npm run test:stress && npm run test:demo",
     "test:basic": "node test_basic.js",
     "test:full": "npm run test:stress-real"
+    ,
+    "build:prod": "vite build && javascript-obfuscator ./dist/assets --output ./dist/assets"
   },
   "dependencies": {
     "react": "^19.1.1",
@@ -38,6 +40,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
+    "javascript-obfuscator": "^4.1.1",
     "jest": "^30.2.0",
     "vite": "^7.1.7"
   }
