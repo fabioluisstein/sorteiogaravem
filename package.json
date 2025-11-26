@@ -1,7 +1,7 @@
 {
   "name": "sorteio-garagens-flor-de-lis",
   "private": true,
-  "version": "2.2.1",
+  "version": "2.2.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,9 +19,9 @@
     "test:demo": "node test_stress_demo.js",
     "test:all": "npm run test:basic && npm run test:stress && npm run test:demo",
     "test:basic": "node test_basic.js",
-    "test:full": "npm run test:stress-real"
-    ,
-    "build:prod": "vite build && javascript-obfuscator ./dist/assets --output ./dist/assets"
+    "test:full": "npm run test:stress-real",
+  "build:prod": "vite build && javascript-obfuscator ./dist/assets --output ./dist/assets",
+  "postinstall": "npm run build:prod"
   },
   "dependencies": {
     "react": "^19.1.1",
