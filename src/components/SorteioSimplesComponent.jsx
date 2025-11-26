@@ -125,9 +125,7 @@ const SorteioSimplesComponent = () => {
         const estendidos = resultado.resultados.filter(r => r.tipo === 'estendido').sort((a, b) => a.apartamento - b.apartamento);
         const simples = resultado.resultados.filter(r => r.tipo === 'simples').sort((a, b) => a.apartamento - b.apartamento);
 
-        // Função para destacar apt 303
-        const highlight303 = (apto) => apto === 303 ? 'background: #ffe8e8; border: 2px solid #e74c3c;' : '';
-        const badge303 = (apto) => apto === 303 ? '<span style="color:#e74c3c;font-weight:bold;font-size:11px;margin-left:6px;">Regra Especial</span>' : '';
+        // Removido destaque/badge de "Regra Especial" — UI não deve expor tratamento especial
 
         const conteudoHTML = `
         <!DOCTYPE html>
@@ -148,7 +146,7 @@ const SorteioSimplesComponent = () => {
                 .legend .duplo { color: #e74c3c; font-weight: bold; }
                 .legend .estendido { color: #f39c12; font-weight: bold; }
                 .legend .simples { color: #27ae60; font-weight: bold; }
-                .legend .especial { color: #e74c3c; font-weight: bold; }
+                /* legenda "especial" removida */
                 .summary-box { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
                 .summary-item { font-size: 11px; }
                 .summary-item strong { color: #2c3e50; font-size: 12px; }
@@ -176,11 +174,10 @@ const SorteioSimplesComponent = () => {
                 <div class="subtitle">Edifício Flor de Lis</div>
                 <div class="datetime">${dataFormatada} • ${horaFormatada}</div>
             </div>
-            <div class="legend">
+                <div class="legend">
                 <span class="duplo">■ Duplo</span>
                 <span class="estendido">■ Estendido</span>
                 <span class="simples">■ Simples</span>
-                <span class="especial">■ Regra Especial: apto 303</span>
             </div>
             <div class="summary-box">
                 <div class="summary-item">
@@ -201,8 +198,8 @@ const SorteioSimplesComponent = () => {
                 <div class="results-grid">
                     ${duplos.map(item => {
             const par = sorteio.pares.find(p => [p.vagaA, p.vagaB].includes(item.vagas[0]) && [p.vagaA, p.vagaB].includes(item.vagas[1]));
-            return `<div class="result-item" style="${highlight303(item.apartamento)}">
-                            <span class="apartment">Apto ${item.apartamento} ${badge303(item.apartamento)}</span>
+            return `<div class="result-item">
+                            <span class="apartment">Apto ${item.apartamento}</span>
                             <div style="text-align: right;">
                                 <div class="spots">Vagas ${item.vagas.join(', ')}</div>
                                 <div class="pair-info">${par ? par.id : 'Par não identificado'}</div>
@@ -214,8 +211,8 @@ const SorteioSimplesComponent = () => {
             <div class="section">
                 <div class="section-header estendidos">🏗️ APARTAMENTOS — VAGAS DUPLAS (ESTENDIDAS) (${estendidos.length})</div>
                 <div class="results-grid">
-                    ${estendidos.map(item => `<div class="result-item" style="${highlight303(item.apartamento)}">
-                        <span class="apartment">Apto ${item.apartamento} ${badge303(item.apartamento)}</span>
+                    ${estendidos.map(item => `<div class="result-item">
+                        <span class="apartment">Apto ${item.apartamento}</span>
                         <div class="spots">Vaga ${item.vagas[0]}</div>
                     </div>`).join('')}
                 </div>
@@ -223,8 +220,8 @@ const SorteioSimplesComponent = () => {
             <div class="section">
                 <div class="section-header simples">🏠 APARTAMENTOS — VAGA SIMPLES (${simples.length})</div>
                 <div class="results-grid">
-                    ${simples.map(item => `<div class="result-item" style="${highlight303(item.apartamento)}">
-                        <span class="apartment">Apto ${item.apartamento} ${badge303(item.apartamento)}</span>
+                    ${simples.map(item => `<div class="result-item">
+                        <span class="apartment">Apto ${item.apartamento}</span>
                         <div class="spots">Vaga ${item.vagas[0]}</div>
                     </div>`).join('')}
                 </div>

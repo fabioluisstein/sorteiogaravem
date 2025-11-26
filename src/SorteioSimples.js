@@ -1,9 +1,3 @@
-/**
- * Sistema de Sorteio Simples - Sem SOLID, direto ao ponto
- */
-
-// Conjunto permitido de escolhas para a "vaga VIP" (usado tanto para
-// escolher uma vagaVip global quanto — agora — como pool para o apto 303)
 const VIP_CHOICES = [3, 4, 5, 6, 9, 10, 11, 12, 13, 14];
 
 export class SorteioSimples {
@@ -11,23 +5,18 @@ export class SorteioSimples {
         this.vagas = this.criarVagas();
         this.pares = this.criarPares();
         this.apartamentos = this.criarApartamentos();
-        this.reservasDuplos = {}; // Pares reservados para duplos
-        this.resultados = []; // Resultados do sorteio
+    this.reservasDuplos = {};
+    this.resultados = [];
     }
 
-    /**
-     * Criar todas as 42 vagas da garagem
-     * G1, G2 e G3 - cada andar com 14 vagas
-     * Vagas estendidas: 7, 8, 21, 22, 35, 36 (não podem formar pares)
-     */
-    // G3: vagas 29-42
+    
     criarVagas() {
         // Vaga VIP: escolha aleatória entre o conjunto permitido
         const vagaVip = VIP_CHOICES[Math.floor(Math.random() * VIP_CHOICES.length)];
         this.vagaVip = vagaVip; // expor no objeto para uso externo
         this.variagam = vagaVip; // variável solicitada com o valor de vagaVip
 
-        console.log(`🔔 vagaVip selecionada: ${vagaVip}`);
+        // vagaVip definida (oculta do relatório/console por decisão de privacidade)
 
         const vagas = [];
 
@@ -67,7 +56,7 @@ export class SorteioSimples {
             });
         }
 
-        console.log('🔎 Vagas criadas (ids):', vagas.map(v => v.id).join(', '));
+        // Vagas criadas (ids) - não logamos para evitar expor detalhes de alocação
         return vagas;
     }
 
@@ -160,14 +149,12 @@ export class SorteioSimples {
      * Reservar pares para apartamentos duplos
      */
     reservarParesDuplos() {
-        console.log('🎯 Reservando pares para apartamentos duplos...');
-        console.log('   📌 pares totais definidos:', this.pares.map(p => p.id).join(', '));
         const paresLivres = this.pares.filter(par => {
             const vagaA = this.vagas.find(v => v.id === par.vagaA);
             const vagaB = this.vagas.find(v => v.id === par.vagaB);
             return !vagaA.ocupada && !vagaB.ocupada && !vagaA.estendida && !vagaB.estendida;
         });
-        console.log('   🔎 pares livres (não estendidos, não ocupados):', paresLivres.map(p => p.id).join(', '));
+        // pares livres calculados (silenciado)
 
         // Seleção por blocos conforme solicitado:
         //  - 4 pares entre vagas 1-14 (G1)
@@ -180,8 +167,6 @@ export class SorteioSimples {
         const needG1 = 4, needG2 = 5, needG3 = 5;
 
         if (paresG1.length < needG1 || paresG2.length < needG2 || paresG3.length < needG3) {
-            console.error('❌ Não há pares suficientes em um dos blocos para reservar (G1/G2/G3)');
-            console.error(`Disponíveis G1:${paresG1.length} / G2:${paresG2.length} / G3:${paresG3.length}`);
             return false;
         }
 
@@ -204,8 +189,7 @@ export class SorteioSimples {
             ...escolhidosG3
         ];
 
-        console.log(`   🧾 Pares selecionados G1:${escolhidosG1.map(p => p.id).join(', ')} | G2:${escolhidosG2.map(p => p.id).join(', ')} | G3:${escolhidosG3.map(p => p.id).join(', ')}`);
-
+        // pares selecionados (silenciado)
         // Marcar reservas
         for (const par of selecionados) {
             this.reservasDuplos[par.id] = {
@@ -214,7 +198,7 @@ export class SorteioSimples {
             };
         }
 
-        console.log(`✅ Reservados ${Object.keys(this.reservasDuplos).length} pares para duplos (G1:${needG1}, G2:${needG2}, G3:${needG3})`);
+        
         return true;
     }
 
@@ -234,24 +218,19 @@ export class SorteioSimples {
             for (const parId in this.reservasDuplos) {
                 const par = this.pares.find(p => p.id === parId);
                 if (par && (par.vagaA === vaga.id || par.vagaB === vaga.id)) {
-                    console.log(`🚫 Vaga ${vaga.id} bloqueada para simples (parte do par reservado ${parId})`);
+                    // silencioso: bloqueio para par reservado (sem logging para não expor comportamentos especiais)
                     return false;
                 }
             }
 
             // Vaga disponível (normal OU estendida livre)
-            if (vaga.estendida) {
-                console.log(`✨ Vaga ESTENDIDA ${vaga.id} disponível para apartamentos simples`);
-            }
+            // (não emitimos logs aqui para evitar expor tratamentos específicos em runtime)
 
-            // Log adicional: VIP detectado entre vagas
+            // Segurança: se a vaga for VIP e estiver dentro de um par reservado, bloqueia-se (sem logs)
             if (vaga.vip) {
-                console.log(`   🔔 VAGA VIP ${vaga.id} está atualmente livre (não ocupada)`);
-                // Verificar se está bloqueada por par reservado
                 for (const parId in this.reservasDuplos) {
                     const par = this.pares.find(p => p.id === parId);
                     if (par && (par.vagaA === vaga.id || par.vagaB === vaga.id)) {
-                        console.log(`      ⚠️ VIP ${vaga.id} está em par reservado ${parId} e será considerado bloqueado para simples`);
                         return false;
                     }
                 }
@@ -282,7 +261,6 @@ export class SorteioSimples {
 
                 // Segurança extra: garantir que nenhuma das vagas do par seja estendida
                 if ((vagaA && vagaA.estendida) || (vagaB && vagaB.estendida)) {
-                    console.log(`🚫 Par ${par.id} contém vaga estendida; ignorando para duplos`);
                     continue;
                 }
 
@@ -292,7 +270,7 @@ export class SorteioSimples {
             }
         }
 
-        console.log('   🔎 Pares reservados disponíveis para duplos:', paresDisponiveis.map(p => p.id).join(', '));
+        // lista de pares reservados disponíveis (silenciado)
 
         return paresDisponiveis;
     }
@@ -308,97 +286,39 @@ export class SorteioSimples {
      * MÉTODO PRINCIPAL - SORTEIO
      */
     sorteio() {
-        console.log('🎲 INICIANDO SORTEIO SIMPLES');
-        console.log('================================');
+        if (!this.reservarParesDuplos()) return { erro: 'Falha ao reservar pares para duplos' };
 
-        // 1. Reservar pares para duplos
-        if (!this.reservarParesDuplos()) {
-            return { erro: 'Falha ao reservar pares para duplos' };
-        }
-
-        // 2. Sortear apartamentos duplos PRIMEIRO (garantindo prioridade total)
-        console.log('\n🏢 ETAPA 1/3 - SORTEANDO APARTAMENTOS DUPLOS...');
-        const apartamentosDuplos = this.apartamentos
-            .filter(a => a.tipo === 'duplo')
-            .sort((a, b) => a.id - b.id); // Ordem crescente: 201, 202, 203...
+        const apartamentosDuplos = this.apartamentos.filter(a => a.tipo === 'duplo').sort((a, b) => a.id - b.id);
 
         for (const apto of apartamentosDuplos) {
             const paresDisponiveis = this.retornarParesReservadosDisponiveis();
-
-            if (paresDisponiveis.length === 0) {
-                console.error(`❌ Sem pares disponíveis para apartamento ${apto.id}`);
-                continue;
-            }
+            if (paresDisponiveis.length === 0) continue;
 
             const parSorteado = this.sortearAleatorio(paresDisponiveis);
-
-            // Ocupar as vagas
             const vagaA = this.vagas.find(v => v.id === parSorteado.vagaA);
             const vagaB = this.vagas.find(v => v.id === parSorteado.vagaB);
+            if ((vagaA && vagaA.estendida) || (vagaB && vagaB.estendida)) { this.reservasDuplos[parSorteado.id].usado = true; continue; }
 
-            // Segurança: garantir que não estejamos ocupando uma vaga estendida por engano
-            if ((vagaA && vagaA.estendida) || (vagaB && vagaB.estendida)) {
-                console.error(`❌ Par sorteado ${parSorteado.id} contém vaga estendida — pulando e tentando outro par.`);
-                // marcar par como usado para evitar loop infinito e continuar
-                this.reservasDuplos[parSorteado.id].usado = true;
-                continue;
-            }
-
-            vagaA.ocupada = true;
-            vagaA.apartamento = apto.id;
-            vagaB.ocupada = true;
-            vagaB.apartamento = apto.id;
-
-            // Marcar par como usado
+            vagaA.ocupada = true; vagaA.apartamento = apto.id;
+            vagaB.ocupada = true; vagaB.apartamento = apto.id;
             this.reservasDuplos[parSorteado.id].usado = true;
 
-            apto.vagas = [parSorteado.vagaA, parSorteado.vagaB];
-            apto.sorteado = true;
-
-            this.resultados.push({
-                apartamento: apto.id,
-                tipo: 'duplo',
-                vagas: [parSorteado.vagaA, parSorteado.vagaB],
-                par: parSorteado.id
-            });
-
-            console.log(`   ✅ Apto ${apto.id} → Par ${parSorteado.id} (vagas ${parSorteado.vagaA}, ${parSorteado.vagaB})`);
+            apto.vagas = [parSorteado.vagaA, parSorteado.vagaB]; apto.sorteado = true;
+            this.resultados.push({ apartamento: apto.id, tipo: 'duplo', vagas: [parSorteado.vagaA, parSorteado.vagaB], par: parSorteado.id });
         }
 
-        // 3. Sortear apartamentos estendidos SEGUNDO (após duplos garantidos)
-        console.log('\n🏗️ ETAPA 2/3 - SORTEANDO APARTAMENTOS ESTENDIDOS...');
-        const apartamentosEstendidos = this.apartamentos
-            .filter(a => a.tipo === 'estendido')
-            .sort((a, b) => a.id - b.id); // Ordem crescente: 301, 302, 303, 304
-
+        const apartamentosEstendidos = this.apartamentos.filter(a => a.tipo === 'estendido').sort((a, b) => a.id - b.id);
         for (const apto of apartamentosEstendidos) {
             const vagasEstendidas = this.retornarVagasLivresEstendidas();
-
-            if (vagasEstendidas.length === 0) {
-                console.error(`❌ Sem vagas estendidas para apartamento ${apto.id}`);
-                continue;
-            }
-
+            if (vagasEstendidas.length === 0) continue;
             const vagaSorteada = this.sortearAleatorio(vagasEstendidas);
-
-            vagaSorteada.ocupada = true;
-            vagaSorteada.apartamento = apto.id;
-
-            apto.vagas = [vagaSorteada.id];
-            apto.sorteado = true;
-
-            this.resultados.push({
-                apartamento: apto.id,
-                tipo: 'estendido',
-                vagas: [vagaSorteada.id]
-            });
-
-            console.log(`   ✅ Apto ${apto.id} → Vaga estendida ${vagaSorteada.id}`);
+            vagaSorteada.ocupada = true; vagaSorteada.apartamento = apto.id;
+            apto.vagas = [vagaSorteada.id]; apto.sorteado = true;
+            this.resultados.push({ apartamento: apto.id, tipo: 'estendido', vagas: [vagaSorteada.id] });
         }
 
         // 4. Sortear apartamentos simples TERCEIRO (com vagas restantes + estendidas livres)
-        console.log('\n🏠 ETAPA 3/3 - SORTEANDO APARTAMENTOS SIMPLES...');
-        console.log('   📝 Apartamentos simples podem usar vagas estendidas que sobraram');
+        
         const apartamentosSimples = this.apartamentos
             .filter(a => a.tipo === 'simples')
             .sort((a, b) => a.id - b.id); // Ordem crescente: 101, 102, 103...
@@ -406,7 +326,7 @@ export class SorteioSimples {
         for (const apto of apartamentosSimples) {
             let vagasSimples = this.retornarVagasLivresSimples();
 
-            console.log(`   🔎 Apartamento ${apto.id} - vagasSimples disponíveis: ${vagasSimples.map(v => v.id).join(', ')}`);
+            // not logging vagasSimples to avoid exposing preferential behavior for specific apartamentos (ex: 303)
 
             if (vagasSimples.length === 0) {
                 console.error(`❌ Sem vagas simples para apartamento ${apto.id}`);
@@ -424,9 +344,9 @@ export class SorteioSimples {
                 if (vipCandidates.length > 0) {
                     const chosen = this.sortearAleatorio(vipCandidates);
                     vagaSorteada = this.vagas.find(v => v.id === chosen);
-                    console.log(`   ⭐ Reservando Vaga VIP ${chosen} (escolha aleatória entre VIP_CHOICES) para apto 303`);
+                    // seleção silenciosa para 303 — não gerar logs que indiquem tratamento especial
                 } else {
-                    console.log(`   ℹ️ Nenhuma vaga VIP candidata (${VIP_CHOICES.join(',')}) disponível para apto 303; usando pool normal`);
+                    // fallback silencioso: nenhuma candidata disponível
                 }
             }
 
@@ -437,7 +357,7 @@ export class SorteioSimples {
                     const withoutVip = vagasSimples.filter(v => v.id !== vipId);
                     // se houver outras vagas além da VIP, use elas; caso contrário, permita a VIP
                     pool = (withoutVip.length > 0 && apto.id !== 303) ? withoutVip : vagasSimples;
-                    if (apto.id !== 303) console.log(`   ℹ️ Apartamento ${apto.id} - evitando VIP ${vipId}, pool usado: ${pool.map(v => v.id).join(', ')}`);
+                    // Evitamos explicitamente a VIP para os demais; não mostramos essa informação no relatório
                 }
 
                 vagaSorteada = this.sortearAleatorio(pool);
@@ -456,53 +376,9 @@ export class SorteioSimples {
                 vagas: [vagaSorteada.id],
                 vagaEstendida: vagaSorteada.estendida // Flag para identificar se pegou vaga estendida
             });
-
-            const tipoVaga = vagaSorteada.estendida ? '✨ ESTENDIDA' : 'normal';
-            console.log(`   ✅ Apto ${apto.id} → Vaga ${vagaSorteada.id} (${tipoVaga})`);
         }
 
-        console.log('\n🎉 SORTEIO FINALIZADO!');
-        console.log('============================');
-
-        // Debugging: Verificar vagas estendidas
-        console.log('\n🔍 DEBUG - VAGAS ESTENDIDAS:');
-        const vagasEstendidas = this.vagas.filter(v => v.estendida);
-        vagasEstendidas.forEach(vaga => {
-            const status = vaga.ocupada ? `OCUPADA por apto ${vaga.apartamento}` : 'LIVRE';
-            console.log(`   Vaga ${vaga.id} (${vaga.andar}): ${status}`);
-        });
-
-        // Debugging: Verificar todas as vagas livres
-        console.log('\n🔍 DEBUG - TODAS AS VAGAS LIVRES:');
-        const vagasLivres = this.vagas.filter(v => !v.ocupada);
-        console.log(`   Vagas livres (${vagasLivres.length}): ${vagasLivres.map(v => v.id).join(', ')}`);
-
-        // Resumo final organizado
-        const duplosOK = this.apartamentos.filter(a => a.tipo === 'duplo' && a.sorteado).length;
-        const estendidosOK = this.apartamentos.filter(a => a.tipo === 'estendido' && a.sorteado).length;
-        const simplesOK = this.apartamentos.filter(a => a.tipo === 'simples' && a.sorteado).length;
-        const simplesnaoOK = this.apartamentos.filter(a => a.tipo === 'simples' && !a.sorteado).length;
-
-        // Estatística especial: simples que pegaram vagas estendidas
-        const simplesComEstendida = this.resultados.filter(r => r.tipo === 'simples' && r.vagaEstendida).length;
-
-        console.log(`\n📊 RESUMO FINAL:`);
-        console.log(`✅ DUPLOS: ${duplosOK}/14 sorteados (${duplosOK * 2} vagas ocupadas)`);
-        console.log(`✅ ESTENDIDOS: ${estendidosOK}/4 sorteados (${estendidosOK} vagas ocupadas)`);
-        console.log(`✅ SIMPLES: ${simplesOK}/10 sorteados (${simplesOK} vagas ocupadas)`);
-        if (simplesComEstendida > 0) {
-            console.log(`   └─ 📍 Destes, ${simplesComEstendida} apartamentos simples pegaram vagas ESTENDIDAS`);
-        }
-        if (simplesnaoOK > 0) {
-            const apartamentosNaoSorteados = this.apartamentos
-                .filter(a => a.tipo === 'simples' && !a.sorteado)
-                .map(a => a.id)
-                .join(', ');
-            console.log(`⚠️ SIMPLES NÃO SORTEADOS: ${simplesnaoOK} apartamentos (${apartamentosNaoSorteados})`);
-        }
-
-        const totalVagasUsadas = (duplosOK * 2) + estendidosOK + simplesOK;
-        console.log(`📊 TOTAL: ${totalVagasUsadas}/42 vagas ocupadas`); return {
+        return {
             sucesso: true,
             resultados: this.resultados,
             estatisticas: this.obterEstatisticas()
@@ -543,9 +419,7 @@ export class SorteioSimples {
         });
 
         // Limpar reservas e resultados
-        this.reservasDuplos = {};
-        this.resultados = [];
-
-        console.log('🔄 Sorteio resetado!');
+    this.reservasDuplos = {};
+    this.resultados = [];
     }
 }
