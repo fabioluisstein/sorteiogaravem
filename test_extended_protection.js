@@ -1,0 +1,1 @@
+// DELETED: Legacy extended protection test removed per user request. The repository is versioned if recovery is needed.

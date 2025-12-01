@@ -16,7 +16,6 @@
         "**/__tests__/stress-sorteio-simples.test.js"
     ],
     "verbose": true,
-    
     "testTimeout": 300000,
     "collectCoverageFrom": [
         "src/**/*.js",

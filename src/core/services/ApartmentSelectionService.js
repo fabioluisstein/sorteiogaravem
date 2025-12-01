@@ -1,3 +1,3 @@
 export class ApartmentSelectionService {
-    constructor() {}
+    constructor() { }
 }
