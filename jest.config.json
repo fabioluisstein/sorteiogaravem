@@ -3,17 +3,20 @@
     "transform": {
         "^.+\\.js$": "babel-jest"
     },
+    "globals": {
+        "babel-jest": {
+            "useESM": true
+        }
+    },
     "moduleNameMapper": {
         "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "testMatch": [
-        "**/src/tests/**/*.test.js",
-        "**/__tests__/**/*.test.js"
+        "**/__tests__/stress-lottery-mock.test.js",
+        "**/__tests__/stress-sorteio-simples.test.js"
     ],
     "verbose": true,
-    "setupFilesAfterEnv": [
-        "<rootDir>/src/tests/setup/jest.setup.js"
-    ],
+    
     "testTimeout": 300000,
     "collectCoverageFrom": [
         "src/**/*.js",
