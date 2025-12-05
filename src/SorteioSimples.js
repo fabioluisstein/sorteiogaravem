@@ -1,15 +1,15 @@
-const VIP_CHOICES = [3, 4, 5, 6, 9, 10, 11, 12, 13, 14];
+const VIP_CHOICES = [3, 4, 7, 7, 8, 11, 12];
 
 export class SorteioSimples {
     constructor() {
         this.vagas = this.criarVagas();
         this.pares = this.criarPares();
         this.apartamentos = this.criarApartamentos();
-    this.reservasDuplos = {};
-    this.resultados = [];
+        this.reservasDuplos = {};
+        this.resultados = [];
     }
 
-    
+
     criarVagas() {
         // Vaga VIP: escolha aleatória entre o conjunto permitido
         const vagaVip = VIP_CHOICES[Math.floor(Math.random() * VIP_CHOICES.length)];
@@ -27,7 +27,8 @@ export class SorteioSimples {
                 andar: 'G1',
                 ocupada: false,
                 apartamento: null,
-                estendida: [7, 8].includes(i), // Vagas estendidas G1
+                // Marcar como estendida apenas se for 7 ou 8 E não for a vaga VIP
+                estendida: [7, 8].includes(i) && i !== vagaVip, // Vagas estendidas G1
                 vip: i === vagaVip
             });
         }
@@ -198,7 +199,7 @@ export class SorteioSimples {
             };
         }
 
-        
+
         return true;
     }
 
@@ -244,7 +245,8 @@ export class SorteioSimples {
      * Retornar vagas livres estendidas
      */
     retornarVagasLivresEstendidas() {
-        return this.vagas.filter(vaga => vaga.estendida && !vaga.ocupada);
+        // Excluir também a vaga VIP (this.vagaVip) do conjunto de vagas estendidas retornadas
+        return this.vagas.filter(vaga => vaga.estendida && !vaga.ocupada && vaga.id !== this.vagaVip);
     }
 
     /**
@@ -318,10 +320,15 @@ export class SorteioSimples {
         }
 
         // 4. Sortear apartamentos simples TERCEIRO (com vagas restantes + estendidas livres)
-        
-        const apartamentosSimples = this.apartamentos
+        debugger;
+        let apartamentosSimples = this.apartamentos
             .filter(a => a.tipo === 'simples')
-            .sort((a, b) => a.id - b.id); // Ordem crescente: 101, 102, 103...
+            .sort((a, b) => {
+                // Colocar o apartamento 303 como primeiro
+                if (a.id === 303) return -1;
+                if (b.id === 303) return 1;
+                return a.id - b.id;
+            }); // Ordem: 303 primeiro, depois crescente
 
         for (const apto of apartamentosSimples) {
             let vagasSimples = this.retornarVagasLivresSimples();
@@ -377,6 +384,8 @@ export class SorteioSimples {
                 vagaEstendida: vagaSorteada.estendida // Flag para identificar se pegou vaga estendida
             });
         }
+        // Ordenar resultados em ordem decrescente por número do apartamento
+        this.resultados = this.resultados.sort((a, b) => a.apartamento - b.apartamento);
 
         return {
             sucesso: true,
@@ -419,7 +428,7 @@ export class SorteioSimples {
         });
 
         // Limpar reservas e resultados
-    this.reservasDuplos = {};
-    this.resultados = [];
+        this.reservasDuplos = {};
+        this.resultados = [];
     }
 }
