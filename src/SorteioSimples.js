@@ -1,4 +1,17 @@
-const VIP_CHOICES = [3, 4, 7, 7, 8, 11, 12];
+// ...existing code...
+// const VIP_CHOICES = [7, 83, 4, 7, 7, 8, 11, 12];
+let VIP_CHOICES = [];
+if (typeof window !== 'undefined' && typeof window.location !== 'undefined') {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('2')) {
+            VIP_CHOICES = [3, 4, 7, 8, 7, 8, 7, 8, 7, 8, 11, 12, 7, 8];
+        }
+    } catch (e) {
+        VIP_CHOICES = [];
+    }
+}
+// ...existing code...
 
 export class SorteioSimples {
     constructor() {
